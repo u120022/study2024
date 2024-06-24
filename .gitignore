@@ -1,5 +1,9 @@
-/data
-/layer1
-/layer2
-/layer3
 /venv
+
+*.zip
+*.csv
+*.json
+*.dbf
+*.prj
+*.shp
+*.shx
