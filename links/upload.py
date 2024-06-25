@@ -17,12 +17,17 @@ for geometry in list(geometry.geoms):
 
         (node, edge) = osmnx.convert.graph_to_gdfs(g)
         nodes.append(node[["street_count", "geometry"]])
-        edges.append(edge[["highway", "length", "geometry"]])
+        edges.append(edge[["highway", "oneway", "reversed", "length", "geometry"]])
     except Exception as e:
         print(e)
 
 node = gpd.pd.concat(nodes)
 edge = gpd.pd.concat(edges)
+
+node = node.to_crs(6668)
+edge = edge.to_crs(6668)
+
 engine = sqlalchemy.create_engine("postgresql://postgis:0@localhost:5432/postgis")
-node.to_postgis("nodes", engine, if_exists="replace")
-edge.to_postgis("edges", engine, if_exists="replace")
+
+node.to_postgis("nodes", engine, if_exists="replace", index=True)
+edge.to_postgis("edges", engine, if_exists="replace", index=True)
