@@ -1,0 +1,6 @@
+# local shell scripts
+*.local.sh
+
+# build artifacts
+target/
+
