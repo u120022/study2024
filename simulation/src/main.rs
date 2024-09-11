@@ -1,9 +1,11 @@
 mod left_turned;
+mod pedestrian;
 mod right_turned;
 
 use eframe::egui;
 
 use left_turned::*;
+use pedestrian::*;
 use right_turned::*;
 
 fn main() -> eframe::Result {
@@ -21,6 +23,7 @@ fn main() -> eframe::Result {
 struct App {
     left_turned_component: LeftTurnedComponent,
     right_turned_component: RightTurnedComponent,
+    pedestrian_component: PedestrianComponent,
 }
 
 impl eframe::App for App {
@@ -28,7 +31,8 @@ impl eframe::App for App {
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 // self.left_turned_component.ui(ui);
-                self.right_turned_component.ui(ui);
+                // self.right_turned_component.ui(ui);
+                self.pedestrian_component.ui(ui);
             });
         });
     }
