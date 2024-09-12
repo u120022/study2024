@@ -1,59 +1,53 @@
 use eframe::egui;
 
 #[derive(Debug, Clone, Default)]
-pub struct LeftTurnedComponent {
-    var: LeftTurnedVar,
-    data: Option<LeftTurnedData>,
+pub struct RtVehComponent {
+    var: RtVehVar,
+    data: Option<RtVehData>,
 }
 
-impl LeftTurnedComponent {
+impl RtVehComponent {
     pub fn ui(&mut self, ui: &mut egui::Ui) -> egui::Response {
         ui.scope(|ui| {
-            ui.heading("Variable");
+            ui.heading("Right-Turned Vehicle");
 
             let widget =
-                egui::Slider::new(&mut self.var.v_in, 0.0..=100.0).text("inflow velocity[m/sec]");
-            ui.add(widget);
-
-            let widget =
-                egui::Slider::new(&mut self.var.v_out, 0.0..=100.0).text("outflow velocity[m/sec]");
+                egui::Slider::new(&mut self.var.v_in, 0.0..=100.0).text("Inflow velocity[m/sec]");
             ui.add(widget);
 
             let widget =
-                egui::Slider::new(&mut self.var.angle, 0.0..=180.0).text("intersection angle[deg]");
+                egui::Slider::new(&mut self.var.v_out, 0.0..=100.0).text("Outflow velocity[m/sec]");
             ui.add(widget);
 
             let widget =
-                egui::Slider::new(&mut self.var.radius, 0.0..=30.0).text("border radius[m]");
+                egui::Slider::new(&mut self.var.angle, 0.0..=180.0).text("Intersection angle[deg]");
             ui.add(widget);
 
-            let widget = egui::Slider::new(&mut self.var.padding, 0.0..=10.0)
-                .text("distance from border[m]");
+            let widget = egui::Slider::new(&mut self.var.hn_in, 0.0..=10.0)
+                .text("Inflow head nose length[m]");
             ui.add(widget);
 
-            let widget = egui::Checkbox::new(&mut self.var.large, "large car type");
+            let widget = egui::Slider::new(&mut self.var.hn_out, 0.0..=10.0)
+                .text("Outflow head nose length[m]");
             ui.add(widget);
 
             if ui.button("Compute").clicked() {
-                let distr = LeftTurnedDistr::new(&self.var);
-                self.data = LeftTurnedData::sample(&mut rand::thread_rng(), &self.var, &distr);
+                self.data = RtVehData::sample(&mut rand::thread_rng(), &self.var);
             }
 
             // plot
             if let Some(data) = &self.data {
-                ui.heading("Result");
-
-                ui.label(format!("c_in: {:.4}", data.c_in));
-                ui.label(format!("c_out: {:.4}", data.c_out));
-                ui.label(format!("v_min: {:.4}", data.v_min));
-                ui.label(format!("x_min: {:.4}", data.x_min));
-                ui.label(format!("t_min: {:.4}", data.t_min));
-                ui.label(format!("t_exit: {:.4}", data.t_exit));
-                ui.label(format!("t_o: {:.4}", data.t_o));
-                ui.label(format!("x_o: {:.4}", data.x_o));
-                ui.label(format!("max_step: {}", data.max_step));
-
-                ui.separator();
+                let mut text = String::new();
+                text.push_str(&format!("c_in: {:.4}\n", data.c_in));
+                text.push_str(&format!("c_out: {:.4}\n", data.c_out));
+                text.push_str(&format!("v_min: {:.4}\n", data.v_min));
+                text.push_str(&format!("x_min: {:.4}\n", data.x_min));
+                text.push_str(&format!("t_min: {:.4}\n", data.t_min));
+                text.push_str(&format!("t_exit: {:.4}\n", data.t_exit));
+                text.push_str(&format!("t_o: {:.4}\n", data.t_o));
+                text.push_str(&format!("x_o: {:.4}\n", data.x_o));
+                text.push_str(&format!("max_step: {}\n", data.max_step));
+                ui.label(egui::RichText::new(text).monospace());
 
                 ui.label("Velocity-Time Plot");
                 egui_plot::Plot::new("Velocity-Time Plot")
@@ -97,141 +91,79 @@ impl LeftTurnedComponent {
 }
 
 #[derive(Debug, Clone)]
-struct LeftTurnedVar {
-    v_in: f64,
-    v_out: f64,
-    angle: f64,
-    radius: f64,
-    padding: f64,
-    large: bool,
+pub struct RtVehVar {
+    pub v_in: f64,
+    pub v_out: f64,
+    pub angle: f64,
+    pub hn_in: f64,
+    pub hn_out: f64,
 }
 
-impl Default for LeftTurnedVar {
+impl Default for RtVehVar {
     fn default() -> Self {
         Self {
             v_in: 20.0,
             v_out: 20.0,
             angle: 90.0,
-            radius: 17.0,
-            padding: 1.0,
-            large: false,
+            hn_in: 5.0,
+            hn_out: 5.0,
         }
     }
 }
 
 #[derive(Debug, Clone)]
-struct LeftTurnedDistr {
-    c_in: rand_distr::Gamma<f64>,
-    c_out: rand_distr::Gamma<f64>,
-    v_min: rand_distr::Normal<f64>,
-    x_min: rand_distr::Normal<f64>,
-    r_min: rand_distr::Normal<f64>,
+pub struct RtVehData {
+    pub c_in: f64,
+    pub c_out: f64,
+    pub v_min: f64,
+    pub x_min: f64,
+    pub t_min: f64,
+    pub t_exit: f64,
+    pub t_o: f64,
+    pub x_o: f64,
+    pub max_step: usize,
+    pub velocity_series: Vec<[f64; 2]>,
+    pub position_series: Vec<[f64; 2]>,
+    pub curvature_series: Vec<[f64; 2]>,
+    pub trajectory_series: Vec<[f64; 2]>,
 }
 
-impl LeftTurnedDistr {
-    fn new(var: &LeftTurnedVar) -> Self {
+impl RtVehData {
+    pub const STEP: f64 = 0.001;
+    pub const MAX_TIME: f64 = 100.0;
+
+    pub fn sample(rng: &mut impl rand::Rng, var: &RtVehVar) -> Option<Self> {
+        let mut velocity_series = vec![];
+
         // c_in parameter
-        let a = nalgebra::vector![2.09, 0.256, -0.0155, 0.0, -0.168, 0.0];
-        let x = nalgebra::vector![1.0, var.v_in, var.angle, var.radius, var.padding, var.v_out];
+        let a = nalgebra::vector![0.320, -0.0150];
+        let x = nalgebra::vector![var.v_in, var.angle];
         let shape = a.dot(&x).max(f64::EPSILON);
-        let b = nalgebra::vector![0.0573, -0.00173, -0.00109, 0.00219, 0.0];
-        let y = nalgebra::vector![1.0, var.v_in, var.radius, var.padding, var.v_out];
+        let b = nalgebra::vector![0.000334, 0.0];
+        let y = nalgebra::vector![var.v_in, var.hn_out];
         let scale = b.dot(&y).max(f64::EPSILON);
         let c_in = rand_distr::Gamma::new(shape, scale).unwrap();
+        let c_in = rand::Rng::sample(rng, c_in);
 
         // c_out parameter
-        let a = nalgebra::vector![1.40, 0.0, 0.0, 0.0, 0.0633, -0.0224];
-        let x = nalgebra::vector![1.0, var.v_in, var.angle, var.radius, var.padding, var.v_out];
+        let a = nalgebra::vector![0.0275, 0.0108];
+        let x = nalgebra::vector![var.v_in, var.angle];
         let shape = a.dot(&x).max(f64::EPSILON);
-        let b = nalgebra::vector![0.0772, 0.0, 0.0, 0.0, -0.00355];
-        let y = nalgebra::vector![1.0, var.v_in, var.radius, var.padding, var.v_out];
+        let b = nalgebra::vector![0.000228, 0.00222];
+        let y = nalgebra::vector![var.v_in, var.hn_out];
         let scale = b.dot(&y).max(f64::EPSILON);
         let c_out = rand_distr::Gamma::new(shape, scale).unwrap();
+        let c_out = rand::Rng::sample(rng, c_out);
 
         // v_min parameter
-        let a = nalgebra::vector![-0.301, 0.0908, 0.0607, 0.0387, 0.233, -0.496];
-        let x = nalgebra::vector![
-            1.0,
-            var.v_in,
-            var.radius,
-            var.angle,
-            var.padding,
-            if var.large { 1.0 } else { 0.0 }
-        ];
+        let a = nalgebra::vector![0.488, 0.0236, 0.0325];
+        let x = nalgebra::vector![var.v_in, var.angle, var.hn_in];
         let mean = a.dot(&x);
-        let b = nalgebra::vector![0.665, 0.0, 0.0419];
-        let y = nalgebra::vector![1.0, var.radius, var.padding];
+        let b = nalgebra::vector![0.0261, 0.00689, 0.0];
+        let y = nalgebra::vector![var.v_in, var.angle, var.hn_in];
         let std_dev = b.dot(&y).max(f64::EPSILON);
         let v_min = rand_distr::Normal::new(mean, std_dev).unwrap();
-
-        // x_min parameter
-        let a = nalgebra::vector![1.42, 0.0, 0.586, 0.0896, 0.577, 0.0];
-        let x = nalgebra::vector![
-            1.0,
-            var.v_in,
-            var.radius,
-            var.angle,
-            var.padding,
-            if var.large { 1.0 } else { 0.0 }
-        ];
-        let mean = a.dot(&x);
-        let b = nalgebra::vector![0.135, 0.144, 0.336];
-        let y = nalgebra::vector![1.0, var.radius, var.padding];
-        let std_dev = b.dot(&y).max(f64::EPSILON);
-        let x_min = rand_distr::Normal::new(mean, std_dev).unwrap();
-
-        // r_min parameter
-        let a = nalgebra::vector![0.127, 0.390, 0.862, -6.46];
-        let x = nalgebra::vector![var.angle, var.radius, var.padding, 1.0,];
-        let mean = a.dot(&x);
-        let b = nalgebra::vector![0.0363, 0.0624, 0.118, -2.86];
-        let y = nalgebra::vector![var.angle, var.radius, var.padding, 1.0,];
-        let std_dev = b.dot(&y).max(f64::EPSILON);
-        let r_min = rand_distr::Normal::new(mean, std_dev).unwrap();
-
-        Self {
-            c_in,
-            c_out,
-            v_min,
-            x_min,
-            r_min,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-struct LeftTurnedData {
-    c_in: f64,
-    c_out: f64,
-    v_min: f64,
-    x_min: f64,
-    t_min: f64,
-    t_exit: f64,
-    t_o: f64,
-    x_o: f64,
-    max_step: usize,
-    velocity_series: Vec<[f64; 2]>,
-    position_series: Vec<[f64; 2]>,
-    curvature_series: Vec<[f64; 2]>,
-    trajectory_series: Vec<[f64; 2]>,
-}
-
-impl LeftTurnedData {
-    const STEP: f64 = 0.001;
-    const MAX_TIME: f64 = 100.0;
-
-    fn sample(
-        rng: &mut impl rand::Rng,
-        var: &LeftTurnedVar,
-        distr: &LeftTurnedDistr,
-    ) -> Option<Self> {
-        let c_in = rand::Rng::sample(rng, distr.c_in);
-        let c_out = rand::Rng::sample(rng, distr.c_out);
-        let v_min = rand::Rng::sample(rng, distr.v_min);
-        let x_min = rand::Rng::sample(rng, distr.x_min);
-        let r_min = rand::Rng::sample(rng, distr.r_min);
-
-        let mut velocity_series = vec![];
+        let v_min = rand::Rng::sample(rng, v_min);
 
         // inflow
         let t_min = (2.0 / c_in * (var.v_in - v_min)).cbrt();
@@ -267,6 +199,16 @@ impl LeftTurnedData {
 
         let max_step = velocity_series.len();
 
+        // x_min parameter
+        let a = nalgebra::vector![0.917, 0.150, 0.218];
+        let x = nalgebra::vector![var.v_in, var.angle, var.hn_in];
+        let mean = a.dot(&x);
+        let b = nalgebra::vector![-0.438, 0.0975, 0.101];
+        let y = nalgebra::vector![var.v_in, var.angle, var.hn_in];
+        let std_dev = b.dot(&y).max(f64::EPSILON);
+        let x_min = rand_distr::Normal::new(mean, std_dev).unwrap();
+        let x_min = rand::Rng::sample(rng, x_min);
+
         // position
         let mut x_min_ = 0.0;
         let mut position_series = vec![Default::default(); max_step];
@@ -285,26 +227,22 @@ impl LeftTurnedData {
         }
         let x_o = x_min_ - x_min;
 
+        // dynamic r_min parameter
+        let a = nalgebra::vector![0.0282, 0.0807];
+        let x = nalgebra::vector![var.angle, f64::min(var.hn_in, var.hn_out)];
+        let shape = a.dot(&x);
+        let b = nalgebra::vector![0.162, 1.43];
+        let y = nalgebra::vector![var.angle, v_min];
+        let scale = b.dot(&y).max(f64::EPSILON);
+        let r_min = rand_distr::Weibull::new(scale, shape).unwrap();
+        let r_min = rand::Rng::sample(rng, r_min);
+
         // curvature
-        let a = nalgebra::vector![-1.65, 0.0404, 0.334, 0.0, 0.461, 0.369];
-        let x = nalgebra::vector![
-            1.0,
-            var.angle,
-            var.radius,
-            if var.large { 1.0 } else { 0.0 },
-            var.padding,
-            v_min
-        ];
+        let a = nalgebra::vector![6.09, 0.985, 0.186, 0.235, 0.0];
+        let x = nalgebra::vector![1.0, v_min, r_min, var.hn_in, var.hn_out];
         let a1 = a.dot(&x);
-        let a = nalgebra::vector![2.33, 0.0, 0.335, 2.05, 1.04, 0.268];
-        let x = nalgebra::vector![
-            1.0,
-            var.angle,
-            var.radius,
-            if var.large { 1.0 } else { 0.0 },
-            var.padding,
-            v_min
-        ];
+        let a = nalgebra::vector![6.81, 0.611, 0.313, 0.0, 0.188];
+        let x = nalgebra::vector![1.0, v_min, r_min, var.hn_in, var.hn_out];
         let a2 = a.dot(&x);
         let l_clothoid1 = r_min.recip() / a1.powi(2).recip();
         let angle_clothoid1 = 0.5 * a1.powi(2).recip() * l_clothoid1.powi(2);
@@ -312,7 +250,7 @@ impl LeftTurnedData {
         let angle_clothoid2 = 0.5 * a2.powi(2).recip() * l_clothoid2.powi(2);
         let angle_arc = var.angle.to_radians() - (angle_clothoid1 + angle_clothoid2);
         let l_arc = angle_arc / r_min.recip();
-        if l_arc > 0.0 {
+        if l_arc < 0.0 {
             return None;
         }
         let x_0 = x_o;

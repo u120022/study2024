@@ -1,12 +1,14 @@
-mod left_turned;
-mod pedestrian;
-mod right_turned;
+mod ig_ped;
+mod lt_veh;
+mod ped;
+mod rt_veh;
 
 use eframe::egui;
 
-use left_turned::*;
-use pedestrian::*;
-use right_turned::*;
+use ig_ped::*;
+use lt_veh::*;
+use ped::*;
+use rt_veh::*;
 
 fn main() -> eframe::Result {
     // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -21,18 +23,55 @@ fn main() -> eframe::Result {
 
 #[derive(Debug, Clone, Default)]
 struct App {
-    left_turned_component: LeftTurnedComponent,
-    right_turned_component: RightTurnedComponent,
-    pedestrian_component: PedestrianComponent,
+    state: AppState,
+    lt_veh: LtVehComponent,
+    rt_veh: RtVehComponent,
+    ped: PedComponent,
+    ig_ped: IgPedComponent,
+}
+
+#[derive(Debug, Clone, Default)]
+enum AppState {
+    #[default]
+    None,
+    LtVeh,
+    RtVeh,
+    Ped,
+    IgPed,
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                // self.left_turned_component.ui(ui);
-                // self.right_turned_component.ui(ui);
-                self.pedestrian_component.ui(ui);
+            ui.horizontal(|ui| {
+                if ui.button("Left-turned Vehicle").clicked() {
+                    self.state = AppState::LtVeh;
+                }
+                if ui.button("Right-turnd Vehicle").clicked() {
+                    self.state = AppState::RtVeh;
+                }
+                if ui.button("Pedestrian").clicked() {
+                    self.state = AppState::Ped;
+                }
+                if ui.button("Inter-green Pedestrian").clicked() {
+                    self.state = AppState::IgPed;
+                }
+            });
+
+            egui::ScrollArea::vertical().show(ui, |ui| match self.state {
+                AppState::LtVeh => {
+                    self.lt_veh.ui(ui);
+                }
+                AppState::RtVeh => {
+                    self.rt_veh.ui(ui);
+                }
+                AppState::Ped => {
+                    self.ped.ui(ui);
+                }
+                AppState::IgPed => {
+                    self.ig_ped.ui(ui);
+                }
+                _ => {}
             });
         });
     }
