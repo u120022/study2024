@@ -1,3 +1,4 @@
+mod field;
 mod ig_ped;
 mod lt_veh;
 mod ped;
@@ -5,6 +6,7 @@ mod rt_veh;
 
 use eframe::egui;
 
+use field::*;
 use ig_ped::*;
 use lt_veh::*;
 use ped::*;
@@ -24,6 +26,7 @@ fn main() -> eframe::Result {
 #[derive(Debug, Clone, Default)]
 struct App {
     state: AppState,
+    field: FieldComponent,
     lt_veh: LtVehComponent,
     rt_veh: RtVehComponent,
     ped: PedComponent,
@@ -44,6 +47,9 @@ impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
+                if ui.button("Field").clicked() {
+                    self.state = AppState::None;
+                }
                 if ui.button("Left-turned Vehicle").clicked() {
                     self.state = AppState::LtVeh;
                 }
@@ -59,6 +65,9 @@ impl eframe::App for App {
             });
 
             egui::ScrollArea::vertical().show(ui, |ui| match self.state {
+                AppState::None => {
+                    self.field.ui(ui);
+                }
                 AppState::LtVeh => {
                     self.lt_veh.ui(ui);
                 }
@@ -71,7 +80,6 @@ impl eframe::App for App {
                 AppState::IgPed => {
                     self.ig_ped.ui(ui);
                 }
-                _ => {}
             });
         });
     }

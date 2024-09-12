@@ -24,11 +24,11 @@ impl RtVehComponent {
             ui.add(widget);
 
             let widget = egui::Slider::new(&mut self.var.hn_in, 0.0..=10.0)
-                .text("Inflow head nose length[m]");
+                .text("Inflow hard nose length[m]");
             ui.add(widget);
 
             let widget = egui::Slider::new(&mut self.var.hn_out, 0.0..=10.0)
-                .text("Outflow head nose length[m]");
+                .text("Outflow hard nose length[m]");
             ui.add(widget);
 
             if ui.button("Compute").clicked() {

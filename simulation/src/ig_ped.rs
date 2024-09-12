@@ -23,19 +23,18 @@ impl IgPedComponent {
                 .text("Distance from crosswalk[m]");
             ui.add(widget);
 
-            let widget = egui::Slider::new(&mut self.var.x_init, 0.0..=10.0).text("Init x[m]");
+            let widget = egui::Slider::new(&mut self.var.x_init, -10.0..=10.0).text("Init x[m]");
+            ui.add(widget);
+
+            let widget = egui::Slider::new(&mut self.var.width, 0.0..=30.0).text("Road width[m]");
             ui.add(widget);
 
             let widget =
-                egui::Slider::new(&mut self.var.length, 0.0..=30.0).text("Crosswalk length[m]");
+                egui::Slider::new(&mut self.var.cw_width, 0.0..=10.0).text("Crosswalk width[m]");
             ui.add(widget);
 
-            let widget =
-                egui::Slider::new(&mut self.var.width, 0.0..=10.0).text("Crosswalk width[m]");
-            ui.add(widget);
-
-            let widget = egui::Slider::new(&mut self.var.width_offset, 0.0..=10.0)
-                .text("Crosswalk set-back length[m]");
+            let widget = egui::Slider::new(&mut self.var.cw_setback, 0.0..=30.0)
+                .text("Crosswalk setback[m]");
             ui.add(widget);
 
             let widget = egui::Checkbox::new(&mut self.var.far_side, "Is far-side");
@@ -76,8 +75,8 @@ impl IgPedComponent {
                 ui.label("Velocity-Length Plot");
                 let position_series = vec![
                     [0.0, data.v_0],
-                    [self.var.length * 0.5, data.v_1],
-                    [self.var.length, data.v_2],
+                    [self.var.width * 0.5, data.v_1],
+                    [self.var.width, data.v_2],
                 ];
                 egui_plot::Plot::new("Velocity-Length Plot")
                     .view_aspect(2.0)
@@ -89,15 +88,15 @@ impl IgPedComponent {
                 ui.label("Position-Length Plot");
                 let position_series = vec![
                     [0.0, data.x_1],
-                    [self.var.length * 0.5, data.x_2],
-                    [self.var.length, data.x_3],
+                    [self.var.width * 0.5, data.x_2],
+                    [self.var.width, data.x_3],
                 ];
                 egui_plot::Plot::new("Position-Length Plot")
                     .view_aspect(2.0)
                     .allow_scroll(false)
                     .show(ui, |plot_ui| {
                         plot_ui.hline(egui_plot::HLine::new(0.0));
-                        plot_ui.hline(egui_plot::HLine::new(self.var.width));
+                        plot_ui.hline(egui_plot::HLine::new(self.var.cw_width));
                         plot_ui.line(egui_plot::Line::new(position_series));
                     });
             }
@@ -112,9 +111,9 @@ pub struct IgPedVar {
     pub v_blink: f64,
     pub l_init: f64,
     pub x_init: f64,
-    pub length: f64,
     pub width: f64,
-    pub width_offset: f64,
+    pub cw_width: f64,
+    pub cw_setback: f64,
     pub far_side: bool,
     pub diagonal: bool,
     pub center_side: bool,
@@ -130,9 +129,9 @@ impl Default for IgPedVar {
             v_blink: 1.0,
             l_init: 3.0,
             x_init: 1.0,
-            length: 10.0,
-            width: 3.0,
-            width_offset: 2.0,
+            width: 17.0,
+            cw_width: 4.5,
+            cw_setback: 13.0,
             far_side: false,
             diagonal: false,
             center_side: false,
@@ -167,7 +166,7 @@ impl IgPedData {
 
         // first half velocity
         let a = nalgebra::vector![3.88, 0.129, -3.51];
-        let x = nalgebra::vector![v_0, var.length, 1.0];
+        let x = nalgebra::vector![v_0, var.width, 1.0];
         let shape = a.dot(&x).max(f64::EPSILON);
         let b = nalgebra::vector![-0.0144, 0.0158, 0.170];
         let y = nalgebra::vector![v_0, var.t_blink, 1.0];
@@ -194,8 +193,8 @@ impl IgPedData {
         // first x
         let a = nalgebra::vector![0.210, -0.0200, -0.220, -1.03, -1.06, 0.100, -6.36, 0.0, 2.11];
         let x = nalgebra::vector![
-            var.width,
-            var.width_offset,
+            var.cw_width,
+            var.cw_setback,
             if var.far_side { 1.0 } else { 0.0 },
             if var.diagonal { 1.0 } else { 0.0 },
             if var.center_side { 1.0 } else { 0.0 },
@@ -207,8 +206,8 @@ impl IgPedData {
         let shape = a.dot(&x).max(f64::EPSILON);
         let b = nalgebra::vector![-0.0400, 0.0, 0.0, 0.0, -0.660, 2.31];
         let y = nalgebra::vector![
-            var.length,
             var.width,
+            var.cw_width,
             var.lt_car_flow,
             var.forward_ped_flow,
             var.forward_ped_flow,
@@ -216,13 +215,13 @@ impl IgPedData {
         ];
         let scale = b.dot(&y).max(f64::EPSILON);
         let x_1 = rand_distr::Weibull::new(scale, shape).unwrap();
-        let x_1 = rand::Rng::sample(rng, x_1).max(0.0).min(var.width);
+        let x_1 = rand::Rng::sample(rng, x_1).max(0.0).min(var.cw_width);
 
         // mid x
         let a = nalgebra::vector![-0.540, 0.0, 0.0, -0.390, 0.440, 0.830, 0.110, 2.16, 3.51];
         let x = nalgebra::vector![
-            var.width,
-            var.width_offset,
+            var.cw_width,
+            var.cw_setback,
             if var.far_side { 1.0 } else { 0.0 },
             if var.diagonal { 1.0 } else { 0.0 },
             if var.center_side { 1.0 } else { 0.0 },
@@ -234,8 +233,8 @@ impl IgPedData {
         let shape = a.dot(&x).max(f64::EPSILON);
         let b = nalgebra::vector![0.0, 1.13, 0.0, 0.0, -0.950, -1.86];
         let y = nalgebra::vector![
-            var.length,
             var.width,
+            var.cw_width,
             var.lt_car_flow,
             var.forward_ped_flow,
             var.forward_ped_flow,
@@ -243,13 +242,13 @@ impl IgPedData {
         ];
         let scale = b.dot(&y).max(f64::EPSILON);
         let x_2 = rand_distr::Weibull::new(scale, shape).unwrap();
-        let x_2 = rand::Rng::sample(rng, x_2).max(0.0).min(var.width);
+        let x_2 = rand::Rng::sample(rng, x_2).max(0.0).min(var.cw_width);
 
         // last x
         let a = nalgebra::vector![0.450, 0.0200, 0.150, -0.660, -0.220, 0.200, 0.0, 0.0, -1.19];
         let x = nalgebra::vector![
-            var.width,
-            var.width_offset,
+            var.cw_width,
+            var.cw_setback,
             if var.far_side { 1.0 } else { 0.0 },
             if var.diagonal { 1.0 } else { 0.0 },
             if var.center_side { 1.0 } else { 0.0 },
@@ -261,8 +260,8 @@ impl IgPedData {
         let shape = a.dot(&x).max(f64::EPSILON);
         let b = nalgebra::vector![0.0, 1.0, -10.5, 6.93, -1.69, -1.94];
         let y = nalgebra::vector![
-            var.length,
             var.width,
+            var.cw_width,
             var.lt_car_flow,
             var.forward_ped_flow,
             var.forward_ped_flow + var.backward_ped_flow,
@@ -270,7 +269,7 @@ impl IgPedData {
         ];
         let scale = b.dot(&y).max(f64::EPSILON);
         let x_3 = rand_distr::Weibull::new(scale, shape).unwrap();
-        let x_3 = rand::Rng::sample(rng, x_3).max(0.0).min(var.width);
+        let x_3 = rand::Rng::sample(rng, x_3).max(0.0).min(var.cw_width);
 
         Some(Self {
             v_0,
