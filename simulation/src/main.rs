@@ -1,8 +1,11 @@
+mod math;
+
 mod field;
 mod ig_ped;
 mod lt_veh;
 mod ped;
 mod rt_veh;
+mod simulator;
 
 use eframe::egui;
 
@@ -11,6 +14,7 @@ use ig_ped::*;
 use lt_veh::*;
 use ped::*;
 use rt_veh::*;
+use simulator::*;
 
 fn main() -> eframe::Result {
     // Log to stderr (if you run with `RUST_LOG=debug`).

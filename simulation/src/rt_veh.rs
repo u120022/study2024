@@ -1,5 +1,7 @@
 use eframe::egui;
 
+use crate::math;
+
 #[derive(Debug, Clone, Default)]
 pub struct RtVehComponent {
     var: RtVehVar,
@@ -261,11 +263,11 @@ impl RtVehData {
         for i in 0..max_step {
             let [_, x] = position_series[i];
             if x_0 <= x && x < x_1 {
-                curvature_series[i] = [x, a1.powi(2).recip() * (x - x_0)];
+                curvature_series[i] = [x, -a1.powi(2).recip() * (x - x_0)];
             } else if x_1 <= x && x < x_2 {
-                curvature_series[i] = [x, r_min.recip()];
+                curvature_series[i] = [x, -r_min.recip()];
             } else if x_2 <= x && x < x_3 {
-                curvature_series[i] = [x, r_min.recip() - a2.powi(2).recip() * (x - x_2)];
+                curvature_series[i] = [x, -(r_min.recip() - a2.powi(2).recip() * (x - x_2))];
             } else {
                 curvature_series[i] = [x, 0.0];
             }
@@ -309,6 +311,34 @@ impl RtVehData {
         // for [x, _] in curvature_series.iter_mut() {
         //     *x -= x_o;
         // }
+
+        // trajectory origin shift
+        let start_origin = nalgebra::Vector2::new(trajectory_series[0][0], trajectory_series[0][1]);
+        let start_dir = nalgebra::Vector2::new(
+            trajectory_series[1][0] - trajectory_series[0][0],
+            trajectory_series[1][1] - trajectory_series[0][1],
+        )
+        .normalize();
+        let last_idx = trajectory_series.len() - 1;
+        let end_origin = nalgebra::Vector2::new(
+            trajectory_series[last_idx][0],
+            trajectory_series[last_idx][1],
+        );
+        let end_dir = nalgebra::Vector2::new(
+            trajectory_series[last_idx - 1][0] - trajectory_series[last_idx][0],
+            trajectory_series[last_idx - 1][1] - trajectory_series[last_idx][1],
+        )
+        .normalize();
+        let trajectory_origin = math::intersection_point(
+            [start_origin.x, start_origin.y],
+            [start_origin.x + start_dir.x, start_origin.y + start_dir.y],
+            [end_origin.x, end_origin.y],
+            [end_origin.x + end_dir.x, end_origin.y + end_dir.y],
+        );
+        for [x, y] in trajectory_series.iter_mut() {
+            *x -= trajectory_origin[0];
+            *y -= trajectory_origin[1];
+        }
 
         Some(Self {
             c_in,

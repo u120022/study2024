@@ -1,8 +1,11 @@
 use eframe::egui;
 
+use crate::*;
+
 #[derive(Debug, Clone, Default)]
 pub struct FieldComponent {
     var: FieldVar,
+    sim: Option<Simulator>,
 }
 
 impl FieldComponent {
@@ -158,19 +161,12 @@ impl FieldComponent {
             q1: [f64; 2],
             radius: f64,
         ) -> Vec<[f64; 2]> {
-            let a_p = p1[1] - p0[1];
-            let b_p = -(p1[0] - p0[0]);
-            let c_p = -(a_p * p0[0] + b_p * p0[1]);
-            let a_q = q1[1] - q0[1];
-            let b_q = -(q1[0] - q0[0]);
-            let c_q = -(a_q * q0[0] + b_q * q0[1]);
-            let x_0 = (b_p * c_q - b_q * c_p) / (a_p * b_q - a_q * b_p);
-            let y_0 = (-a_p * c_q + a_q * c_p) / (a_p * b_q - a_q * b_p);
+            let o = math::intersection_point(p0, p1, q0, q1);
             let mut points = vec![];
             for i in 0..=SUBDIVISION {
                 let v = i as f64 / SUBDIVISION as f64 * 2.0 * std::f64::consts::PI;
-                let x = x_0 + radius * v.cos();
-                let y = y_0 + radius * v.sin();
+                let x = o[0] + radius * v.cos();
+                let y = o[1] + radius * v.sin();
                 if -ROAD_LENGTH <= x && x <= ROAD_LENGTH && -ROAD_LENGTH <= y && y <= ROAD_LENGTH {
                     points.push([x, y]);
                 }
@@ -302,7 +298,22 @@ impl FieldComponent {
                 let widget = egui::Slider::new(&mut self.var.sl_setback_across, 0.0..=30.0)
                     .text("Across stop-line setback[m]");
                 ui.add(widget);
+
+                if ui.button("Simulate").clicked() {
+                    self.sim = Some(Simulator::new(self.var.clone(), LtVehVar::default()));
+                }
             });
+
+            if let Some(sim) = &mut self.sim {
+                sim.forward(0.016);
+
+                for (id, (data, time, position)) in &sim.lt_veh_agent {
+                    let point = egui_plot::Points::new(vec![*position])
+                        .color(egui::Color32::BLUE)
+                        .radius(2.0);
+                    points.push(point);
+                }
+            }
 
             egui_plot::Plot::new("Field Plot")
                 .view_aspect(1.0)
