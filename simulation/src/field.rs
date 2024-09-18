@@ -5,7 +5,6 @@ use crate::*;
 #[derive(Debug, Clone, Default)]
 pub struct FieldComponent {
     var: FieldVar,
-    sim: Option<Simulator>,
 }
 
 impl FieldComponent {
@@ -16,140 +15,140 @@ impl FieldComponent {
         const SUBDIVISION: usize = 64;
 
         // along center line
-        let p0: [f64; 2] = nalgebra::Point2::new(0.0, -ROAD_LENGTH).into();
-        let p1: [f64; 2] = nalgebra::Point2::new(0.0, ROAD_LENGTH).into();
+        let p0: [f64; 2] = nalgebra::Point2::new(-ROAD_LENGTH, 0.0).into();
+        let p1: [f64; 2] = nalgebra::Point2::new(ROAD_LENGTH, 0.0).into();
         let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::GREEN);
         lines.push(line);
         // across center line
-        let p0: [f64; 2] = (r * nalgebra::Point2::new(0.0, -ROAD_LENGTH)).into();
-        let p1: [f64; 2] = (r * nalgebra::Point2::new(0.0, ROAD_LENGTH)).into();
+        let p0: [f64; 2] = (r * nalgebra::Point2::new(-ROAD_LENGTH, 0.0)).into();
+        let p1: [f64; 2] = (r * nalgebra::Point2::new(ROAD_LENGTH, 0.0)).into();
         let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::GREEN);
         lines.push(line);
 
         // along positive boundary
-        let x = self.var.width_along * 0.5;
-        let p0: [f64; 2] = nalgebra::Point2::new(x, -ROAD_LENGTH).into();
-        let p1: [f64; 2] = nalgebra::Point2::new(x, ROAD_LENGTH).into();
+        let y = self.var.width_along * 0.5;
+        let p0: [f64; 2] = nalgebra::Point2::new(-ROAD_LENGTH, y).into();
+        let p1: [f64; 2] = nalgebra::Point2::new(ROAD_LENGTH, y).into();
         let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::GRAY);
         lines.push(line);
         // along negative boundary
-        let x = -self.var.width_along * 0.5;
-        let p0: [f64; 2] = nalgebra::Point2::new(x, -ROAD_LENGTH).into();
-        let p1: [f64; 2] = nalgebra::Point2::new(x, ROAD_LENGTH).into();
+        let y = -self.var.width_along * 0.5;
+        let p0: [f64; 2] = nalgebra::Point2::new(-ROAD_LENGTH, y).into();
+        let p1: [f64; 2] = nalgebra::Point2::new(ROAD_LENGTH, y).into();
         let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::GRAY);
         lines.push(line);
         // across positive boundary
-        let x = self.var.width_across * 0.5;
-        let p0: [f64; 2] = (r * nalgebra::Point2::new(x, -ROAD_LENGTH)).into();
-        let p1: [f64; 2] = (r * nalgebra::Point2::new(x, ROAD_LENGTH)).into();
+        let y = self.var.width_across * 0.5;
+        let p0: [f64; 2] = (r * nalgebra::Point2::new(-ROAD_LENGTH, y)).into();
+        let p1: [f64; 2] = (r * nalgebra::Point2::new(ROAD_LENGTH, y)).into();
         let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::GRAY);
         lines.push(line);
         // across negative boundary
-        let x = -self.var.width_across * 0.5;
-        let p0: [f64; 2] = (r * nalgebra::Point2::new(x, -ROAD_LENGTH)).into();
-        let p1: [f64; 2] = (r * nalgebra::Point2::new(x, ROAD_LENGTH)).into();
+        let y = -self.var.width_across * 0.5;
+        let p0: [f64; 2] = (r * nalgebra::Point2::new(-ROAD_LENGTH, y)).into();
+        let p1: [f64; 2] = (r * nalgebra::Point2::new(ROAD_LENGTH, y)).into();
         let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::GRAY);
         lines.push(line);
 
         // along lane line
-        for &x in &self.var.lane_along {
-            let p0: [f64; 2] = nalgebra::Point2::new(x, -ROAD_LENGTH).into();
-            let p1: [f64; 2] = nalgebra::Point2::new(x, ROAD_LENGTH).into();
+        for &y in &self.var.lane_along {
+            let p0: [f64; 2] = nalgebra::Point2::new(-ROAD_LENGTH, y).into();
+            let p1: [f64; 2] = nalgebra::Point2::new(ROAD_LENGTH, y).into();
             let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::RED);
             lines.push(line);
         }
         // across lane line
-        for &x in &self.var.lane_across {
-            let p0: [f64; 2] = (r * nalgebra::Point2::new(x, -ROAD_LENGTH)).into();
-            let p1: [f64; 2] = (r * nalgebra::Point2::new(x, ROAD_LENGTH)).into();
+        for &y in &self.var.lane_across {
+            let p0: [f64; 2] = (r * nalgebra::Point2::new(-ROAD_LENGTH, y)).into();
+            let p1: [f64; 2] = (r * nalgebra::Point2::new(ROAD_LENGTH, y)).into();
             let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::RED);
             lines.push(line);
         }
 
         // along negative hard nose
-        let p0: [f64; 2] = nalgebra::Point2::new(0.0, -ROAD_LENGTH).into();
-        let p1: [f64; 2] = nalgebra::Point2::new(0.0, -self.var.hn_along).into();
+        let p0: [f64; 2] = nalgebra::Point2::new(-ROAD_LENGTH, 0.0).into();
+        let p1: [f64; 2] = nalgebra::Point2::new(-self.var.hn_along, 0.0).into();
         let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::GRAY);
         lines.push(line);
         // along positive hard nose
-        let p0: [f64; 2] = nalgebra::Point2::new(0.0, ROAD_LENGTH).into();
-        let p1: [f64; 2] = nalgebra::Point2::new(0.0, self.var.hn_along).into();
+        let p0: [f64; 2] = nalgebra::Point2::new(ROAD_LENGTH, 0.0).into();
+        let p1: [f64; 2] = nalgebra::Point2::new(self.var.hn_along, 0.0).into();
         let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::GRAY);
         lines.push(line);
         // across negative line
-        let p0: [f64; 2] = (r * nalgebra::Point2::new(0.0, -ROAD_LENGTH)).into();
-        let p1: [f64; 2] = (r * nalgebra::Point2::new(0.0, -self.var.hn_across)).into();
+        let p0: [f64; 2] = (r * nalgebra::Point2::new(-ROAD_LENGTH, 0.0)).into();
+        let p1: [f64; 2] = (r * nalgebra::Point2::new(-self.var.hn_across, 0.0)).into();
         let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::GRAY);
         lines.push(line);
         // across positive line
-        let p0: [f64; 2] = (r * nalgebra::Point2::new(0.0, ROAD_LENGTH)).into();
-        let p1: [f64; 2] = (r * nalgebra::Point2::new(0.0, self.var.hn_across)).into();
+        let p0: [f64; 2] = (r * nalgebra::Point2::new(ROAD_LENGTH, 0.0)).into();
+        let p1: [f64; 2] = (r * nalgebra::Point2::new(self.var.hn_across, 0.0)).into();
         let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::GRAY);
         lines.push(line);
 
         // along positive crosswalk
-        let x = self.var.width_along * 0.5;
-        let y_min = self.var.cw_setback_along;
-        let y_max = self.var.cw_setback_along + self.var.cw_width_along;
-        let p0: [f64; 2] = nalgebra::Point2::new(-x, y_min).into();
-        let p1: [f64; 2] = nalgebra::Point2::new(x, y_min).into();
-        let p2: [f64; 2] = nalgebra::Point2::new(x, y_max).into();
-        let p3: [f64; 2] = nalgebra::Point2::new(-x, y_max).into();
+        let y = self.var.width_along * 0.5;
+        let x_min = self.var.cw_setback_along;
+        let x_max = self.var.cw_setback_along + self.var.cw_width_along;
+        let p0: [f64; 2] = nalgebra::Point2::new(x_min, -y).into();
+        let p1: [f64; 2] = nalgebra::Point2::new(x_min, y).into();
+        let p2: [f64; 2] = nalgebra::Point2::new(x_max, y).into();
+        let p3: [f64; 2] = nalgebra::Point2::new(x_max, -y).into();
         let line = egui_plot::Line::new(vec![p0, p1, p2, p3, p0]).color(egui::Color32::YELLOW);
         lines.push(line);
         // along negative crosswalk
-        let x = self.var.width_along * 0.5;
-        let y_min = -self.var.cw_setback_along;
-        let y_max = -self.var.cw_setback_along - self.var.cw_width_along;
-        let p0: [f64; 2] = nalgebra::Point2::new(-x, y_min).into();
-        let p1: [f64; 2] = nalgebra::Point2::new(x, y_min).into();
-        let p2: [f64; 2] = nalgebra::Point2::new(x, y_max).into();
-        let p3: [f64; 2] = nalgebra::Point2::new(-x, y_max).into();
+        let y = self.var.width_along * 0.5;
+        let x_min = -self.var.cw_setback_along;
+        let x_max = -self.var.cw_setback_along - self.var.cw_width_along;
+        let p0: [f64; 2] = nalgebra::Point2::new(x_min, -y).into();
+        let p1: [f64; 2] = nalgebra::Point2::new(x_min, y).into();
+        let p2: [f64; 2] = nalgebra::Point2::new(x_max, y).into();
+        let p3: [f64; 2] = nalgebra::Point2::new(x_max, -y).into();
         let line = egui_plot::Line::new(vec![p0, p1, p2, p3, p0]).color(egui::Color32::YELLOW);
         lines.push(line);
         // across positive crosswalk
-        let x = self.var.width_across * 0.5;
-        let y_min = self.var.cw_setback_across;
-        let y_max = self.var.cw_setback_across + self.var.cw_width_across;
-        let p0: [f64; 2] = (r * nalgebra::Point2::new(-x, y_min)).into();
-        let p1: [f64; 2] = (r * nalgebra::Point2::new(x, y_min)).into();
-        let p2: [f64; 2] = (r * nalgebra::Point2::new(x, y_max)).into();
-        let p3: [f64; 2] = (r * nalgebra::Point2::new(-x, y_max)).into();
+        let y = self.var.width_across * 0.5;
+        let x_min = self.var.cw_setback_across;
+        let x_max = self.var.cw_setback_across + self.var.cw_width_across;
+        let p0: [f64; 2] = (r * nalgebra::Point2::new(x_min, -y)).into();
+        let p1: [f64; 2] = (r * nalgebra::Point2::new(x_min, y)).into();
+        let p2: [f64; 2] = (r * nalgebra::Point2::new(x_max, y)).into();
+        let p3: [f64; 2] = (r * nalgebra::Point2::new(x_max, -y)).into();
         let line = egui_plot::Line::new(vec![p0, p1, p2, p3, p0]).color(egui::Color32::YELLOW);
         lines.push(line);
         // across negative crosswalk
-        let x = self.var.width_across * 0.5;
-        let y_min = -self.var.cw_setback_across;
-        let y_max = -self.var.cw_setback_across - self.var.cw_width_across;
-        let p0: [f64; 2] = (r * nalgebra::Point2::new(-x, y_min)).into();
-        let p1: [f64; 2] = (r * nalgebra::Point2::new(x, y_min)).into();
-        let p2: [f64; 2] = (r * nalgebra::Point2::new(x, y_max)).into();
-        let p3: [f64; 2] = (r * nalgebra::Point2::new(-x, y_max)).into();
+        let y = self.var.width_across * 0.5;
+        let x_min = -self.var.cw_setback_across;
+        let x_max = -self.var.cw_setback_across - self.var.cw_width_across;
+        let p0: [f64; 2] = (r * nalgebra::Point2::new(x_min, -y)).into();
+        let p1: [f64; 2] = (r * nalgebra::Point2::new(x_min, y)).into();
+        let p2: [f64; 2] = (r * nalgebra::Point2::new(x_max, y)).into();
+        let p3: [f64; 2] = (r * nalgebra::Point2::new(x_max, -y)).into();
         let line = egui_plot::Line::new(vec![p0, p1, p2, p3, p0]).color(egui::Color32::YELLOW);
         lines.push(line);
 
-        // along positive stop line
-        let x = self.var.width_along * 0.5;
-        let p0: [f64; 2] = nalgebra::Point2::new(-x, self.var.sl_setback_along).into();
-        let p1: [f64; 2] = nalgebra::Point2::new(x, self.var.sl_setback_along).into();
+        // along positive stop-line
+        let y = self.var.width_along * 0.5;
+        let p0: [f64; 2] = nalgebra::Point2::new(self.var.sl_setback_along, -y).into();
+        let p1: [f64; 2] = nalgebra::Point2::new(self.var.sl_setback_along, y).into();
         let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::YELLOW);
         lines.push(line);
-        // along negative stop line
-        let x = self.var.width_along * 0.5;
-        let p0: [f64; 2] = nalgebra::Point2::new(-x, -self.var.sl_setback_along).into();
-        let p1: [f64; 2] = nalgebra::Point2::new(x, -self.var.sl_setback_along).into();
+        // along negative stop-line
+        let y = self.var.width_along * 0.5;
+        let p0: [f64; 2] = nalgebra::Point2::new(-self.var.sl_setback_along, -y).into();
+        let p1: [f64; 2] = nalgebra::Point2::new(-self.var.sl_setback_along, y).into();
         let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::YELLOW);
         lines.push(line);
-        // across positive crosswalk
-        let x = self.var.width_across * 0.5;
-        let p0: [f64; 2] = (r * nalgebra::Point2::new(-x, self.var.sl_setback_across)).into();
-        let p1: [f64; 2] = (r * nalgebra::Point2::new(x, self.var.sl_setback_across)).into();
+        // across positive stop-line
+        let y = self.var.width_across * 0.5;
+        let p0: [f64; 2] = (r * nalgebra::Point2::new(self.var.sl_setback_across, -y)).into();
+        let p1: [f64; 2] = (r * nalgebra::Point2::new(self.var.sl_setback_across, y)).into();
         let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::YELLOW);
         lines.push(line);
-        // across negative crosswalk
-        let x = self.var.width_across * 0.5;
-        let p0: [f64; 2] = (r * nalgebra::Point2::new(-x, -self.var.sl_setback_across)).into();
-        let p1: [f64; 2] = (r * nalgebra::Point2::new(x, -self.var.sl_setback_across)).into();
+        // across negative stop-line
+        let y = self.var.width_across * 0.5;
+        let p0: [f64; 2] = (r * nalgebra::Point2::new(-self.var.sl_setback_across, -y)).into();
+        let p1: [f64; 2] = (r * nalgebra::Point2::new(-self.var.sl_setback_across, y)).into();
         let line = egui_plot::Line::new(vec![p0, p1]).color(egui::Color32::YELLOW);
         lines.push(line);
 
@@ -175,42 +174,42 @@ impl FieldComponent {
         }
         let mut points = vec![];
         // radius border
-        let x = -self.var.width_along * 0.5 - self.var.radius;
-        let p0: [f64; 2] = nalgebra::Point2::new(x, -ROAD_LENGTH).into();
-        let p1: [f64; 2] = nalgebra::Point2::new(x, ROAD_LENGTH).into();
-        let x = -self.var.width_along * 0.5 - self.var.radius;
-        let q0: [f64; 2] = (r * nalgebra::Point2::new(x, -ROAD_LENGTH)).into();
-        let q1: [f64; 2] = (r * nalgebra::Point2::new(x, ROAD_LENGTH)).into();
+        let y = -self.var.width_along * 0.5 - self.var.radius;
+        let p0: [f64; 2] = nalgebra::Point2::new(-ROAD_LENGTH, y).into();
+        let p1: [f64; 2] = nalgebra::Point2::new(ROAD_LENGTH, y).into();
+        let y = -self.var.width_along * 0.5 - self.var.radius;
+        let q0: [f64; 2] = (r * nalgebra::Point2::new(-ROAD_LENGTH, y)).into();
+        let q1: [f64; 2] = (r * nalgebra::Point2::new(ROAD_LENGTH, y)).into();
         let point = egui_plot::Points::new(radius_border(p0, p1, q0, q1, self.var.radius))
             .color(egui::Color32::GRAY);
         points.push(point);
         // radius border
-        let x = -self.var.width_along * 0.5 - self.var.radius;
-        let p0: [f64; 2] = nalgebra::Point2::new(x, -ROAD_LENGTH).into();
-        let p1: [f64; 2] = nalgebra::Point2::new(x, ROAD_LENGTH).into();
-        let x = self.var.width_along * 0.5 + self.var.radius;
-        let q0: [f64; 2] = (r * nalgebra::Point2::new(x, -ROAD_LENGTH)).into();
-        let q1: [f64; 2] = (r * nalgebra::Point2::new(x, ROAD_LENGTH)).into();
+        let y = -self.var.width_along * 0.5 - self.var.radius;
+        let p0: [f64; 2] = nalgebra::Point2::new(-ROAD_LENGTH, y).into();
+        let p1: [f64; 2] = nalgebra::Point2::new(ROAD_LENGTH, y).into();
+        let y = self.var.width_along * 0.5 + self.var.radius;
+        let q0: [f64; 2] = (r * nalgebra::Point2::new(-ROAD_LENGTH, y)).into();
+        let q1: [f64; 2] = (r * nalgebra::Point2::new(ROAD_LENGTH, y)).into();
         let point = egui_plot::Points::new(radius_border(p0, p1, q0, q1, self.var.radius))
             .color(egui::Color32::GRAY);
         points.push(point);
         // radius border
-        let x = self.var.width_along * 0.5 + self.var.radius;
-        let p0: [f64; 2] = nalgebra::Point2::new(x, -ROAD_LENGTH).into();
-        let p1: [f64; 2] = nalgebra::Point2::new(x, ROAD_LENGTH).into();
-        let x = -self.var.width_along * 0.5 - self.var.radius;
-        let q0: [f64; 2] = (r * nalgebra::Point2::new(x, -ROAD_LENGTH)).into();
-        let q1: [f64; 2] = (r * nalgebra::Point2::new(x, ROAD_LENGTH)).into();
+        let y = self.var.width_along * 0.5 + self.var.radius;
+        let p0: [f64; 2] = nalgebra::Point2::new(-ROAD_LENGTH, y).into();
+        let p1: [f64; 2] = nalgebra::Point2::new(ROAD_LENGTH, y).into();
+        let y = -self.var.width_along * 0.5 - self.var.radius;
+        let q0: [f64; 2] = (r * nalgebra::Point2::new(-ROAD_LENGTH, y)).into();
+        let q1: [f64; 2] = (r * nalgebra::Point2::new(ROAD_LENGTH, y)).into();
         let point = egui_plot::Points::new(radius_border(p0, p1, q0, q1, self.var.radius))
             .color(egui::Color32::GRAY);
         points.push(point);
         // radius border
-        let x = self.var.width_along * 0.5 + self.var.radius;
-        let p0: [f64; 2] = nalgebra::Point2::new(x, -ROAD_LENGTH).into();
-        let p1: [f64; 2] = nalgebra::Point2::new(x, ROAD_LENGTH).into();
-        let x = self.var.width_along * 0.5 + self.var.radius;
-        let q0: [f64; 2] = (r * nalgebra::Point2::new(x, -ROAD_LENGTH)).into();
-        let q1: [f64; 2] = (r * nalgebra::Point2::new(x, ROAD_LENGTH)).into();
+        let y = self.var.width_along * 0.5 + self.var.radius;
+        let p0: [f64; 2] = nalgebra::Point2::new(-ROAD_LENGTH, y).into();
+        let p1: [f64; 2] = nalgebra::Point2::new(ROAD_LENGTH, y).into();
+        let y = self.var.width_along * 0.5 + self.var.radius;
+        let q0: [f64; 2] = (r * nalgebra::Point2::new(-ROAD_LENGTH, y)).into();
+        let q1: [f64; 2] = (r * nalgebra::Point2::new(ROAD_LENGTH, y)).into();
         let point = egui_plot::Points::new(radius_border(p0, p1, q0, q1, self.var.radius))
             .color(egui::Color32::GRAY);
         points.push(point);
@@ -298,30 +297,15 @@ impl FieldComponent {
                 let widget = egui::Slider::new(&mut self.var.sl_setback_across, 0.0..=30.0)
                     .text("Across stop-line setback[m]");
                 ui.add(widget);
-
-                if ui.button("Simulate").clicked() {
-                    self.sim = Some(Simulator::new(self.var.clone(), LtVehVar::default()));
-                }
             });
-
-            if let Some(sim) = &mut self.sim {
-                sim.forward(0.016);
-
-                for (id, (data, time, position)) in &sim.lt_veh_agent {
-                    let point = egui_plot::Points::new(vec![*position])
-                        .color(egui::Color32::BLUE)
-                        .radius(2.0);
-                    points.push(point);
-                }
-            }
 
             egui_plot::Plot::new("Field Plot")
                 .view_aspect(1.0)
                 .data_aspect(1.0)
                 .allow_scroll(false)
                 .show(ui, |plot_ui| {
-                    lines.into_iter().for_each(|l| plot_ui.line(l));
-                    points.into_iter().for_each(|p| plot_ui.points(p));
+                    lines.into_iter().for_each(|v| plot_ui.line(v));
+                    points.into_iter().for_each(|v| plot_ui.points(v));
                 });
         })
         .response
