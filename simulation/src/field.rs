@@ -9,10 +9,11 @@ pub struct FieldComponent {
 
 impl FieldComponent {
     pub fn ui(&mut self, ui: &mut egui::Ui) -> egui::Response {
-        let r = nalgebra::Rotation2::new(self.var.angle.to_radians());
-        let mut lines = vec![];
         const ROAD_LENGTH: f64 = 30.0;
         const SUBDIVISION: usize = 64;
+
+        let r = nalgebra::Rotation2::new(self.var.angle.to_radians());
+        let mut lines = vec![];
 
         // along center line
         let p0: [f64; 2] = nalgebra::Point2::new(-ROAD_LENGTH, 0.0).into();

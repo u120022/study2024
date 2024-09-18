@@ -33,7 +33,7 @@ impl LtVehComponent {
                 .text("Distance from border[m]");
             ui.add(widget);
 
-            let widget = egui::Checkbox::new(&mut self.var.large, "Is large car type");
+            let widget = egui::Checkbox::new(&mut self.var.large, "Is large vehicle type");
             ui.add(widget);
 
             if ui.button("Compute").clicked() {
@@ -346,32 +346,35 @@ impl LtVehData {
         // }
 
         // trajectory origin shift
-        let start_origin = nalgebra::Vector2::new(trajectory_series[0][0], trajectory_series[0][1]);
-        let start_dir = nalgebra::Vector2::new(
-            trajectory_series[1][0] - trajectory_series[0][0],
-            trajectory_series[1][1] - trajectory_series[0][1],
-        )
-        .normalize();
-        let last_idx = trajectory_series.len() - 1;
-        let end_origin = nalgebra::Vector2::new(
-            trajectory_series[last_idx][0],
-            trajectory_series[last_idx][1],
-        );
-        let end_dir = nalgebra::Vector2::new(
-            trajectory_series[last_idx - 1][0] - trajectory_series[last_idx][0],
-            trajectory_series[last_idx - 1][1] - trajectory_series[last_idx][1],
-        )
-        .normalize();
-        let trajectory_origin = math::intersection_point(
-            [start_origin.x, start_origin.y],
-            [start_origin.x + start_dir.x, start_origin.y + start_dir.y],
-            [end_origin.x, end_origin.y],
-            [end_origin.x + end_dir.x, end_origin.y + end_dir.y],
-        );
-        let trajectory_origin = [trajectory_origin[0], trajectory_origin[1]];
-        for [x, y] in trajectory_series.iter_mut() {
-            *x -= trajectory_origin[0];
-            *y -= trajectory_origin[1];
+        if trajectory_series.len() > 2 {
+            let start_origin =
+                nalgebra::Vector2::new(trajectory_series[0][0], trajectory_series[0][1]);
+            let start_dir = nalgebra::Vector2::new(
+                trajectory_series[1][0] - trajectory_series[0][0],
+                trajectory_series[1][1] - trajectory_series[0][1],
+            )
+            .normalize();
+            let last_idx = trajectory_series.len() - 1;
+            let end_origin = nalgebra::Vector2::new(
+                trajectory_series[last_idx][0],
+                trajectory_series[last_idx][1],
+            );
+            let end_dir = nalgebra::Vector2::new(
+                trajectory_series[last_idx - 1][0] - trajectory_series[last_idx][0],
+                trajectory_series[last_idx - 1][1] - trajectory_series[last_idx][1],
+            )
+            .normalize();
+            let trajectory_origin = math::intersection_point(
+                [start_origin.x, start_origin.y],
+                [start_origin.x + start_dir.x, start_origin.y + start_dir.y],
+                [end_origin.x, end_origin.y],
+                [end_origin.x + end_dir.x, end_origin.y + end_dir.y],
+            );
+            let trajectory_origin = [trajectory_origin[0], trajectory_origin[1]];
+            for [x, y] in trajectory_series.iter_mut() {
+                *x -= trajectory_origin[0];
+                *y -= trajectory_origin[1];
+            }
         }
 
         Some(Self {

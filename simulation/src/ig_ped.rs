@@ -46,7 +46,7 @@ impl IgPedComponent {
             let widget = egui::Checkbox::new(&mut self.var.center_side, "Is center-side");
             ui.add(widget);
 
-            let widget = egui::Slider::new(&mut self.var.lt_car_flow, 0.0..=1.0)
+            let widget = egui::Slider::new(&mut self.var.lt_veh_flow, 0.0..=1.0)
                 .text("Left-turned vehicle flow[1/m]");
             ui.add(widget);
 
@@ -117,7 +117,7 @@ pub struct IgPedVar {
     pub far_side: bool,
     pub diagonal: bool,
     pub center_side: bool,
-    pub lt_car_flow: f64,
+    pub lt_veh_flow: f64,
     pub forward_ped_flow: f64,
     pub backward_ped_flow: f64,
 }
@@ -135,7 +135,7 @@ impl Default for IgPedVar {
             far_side: false,
             diagonal: false,
             center_side: false,
-            lt_car_flow: 0.01,
+            lt_veh_flow: 0.01,
             forward_ped_flow: 0.01,
             backward_ped_flow: 0.01,
         }
@@ -199,7 +199,7 @@ impl IgPedData {
             if var.diagonal { 1.0 } else { 0.0 },
             if var.center_side { 1.0 } else { 0.0 },
             var.x_init,
-            var.lt_car_flow,
+            var.lt_veh_flow,
             var.forward_ped_flow,
             1.0
         ];
@@ -208,7 +208,7 @@ impl IgPedData {
         let y = nalgebra::vector![
             var.width,
             var.cw_width,
-            var.lt_car_flow,
+            var.lt_veh_flow,
             var.forward_ped_flow,
             var.forward_ped_flow,
             1.0
@@ -226,7 +226,7 @@ impl IgPedData {
             if var.diagonal { 1.0 } else { 0.0 },
             if var.center_side { 1.0 } else { 0.0 },
             x_1,
-            var.lt_car_flow,
+            var.lt_veh_flow,
             var.forward_ped_flow,
             1.0
         ];
@@ -235,7 +235,7 @@ impl IgPedData {
         let y = nalgebra::vector![
             var.width,
             var.cw_width,
-            var.lt_car_flow,
+            var.lt_veh_flow,
             var.forward_ped_flow,
             var.forward_ped_flow,
             1.0
@@ -253,7 +253,7 @@ impl IgPedData {
             if var.diagonal { 1.0 } else { 0.0 },
             if var.center_side { 1.0 } else { 0.0 },
             x_2,
-            var.lt_car_flow,
+            var.lt_veh_flow,
             var.forward_ped_flow,
             1.0
         ];
@@ -262,7 +262,7 @@ impl IgPedData {
         let y = nalgebra::vector![
             var.width,
             var.cw_width,
-            var.lt_car_flow,
+            var.lt_veh_flow,
             var.forward_ped_flow,
             var.forward_ped_flow + var.backward_ped_flow,
             1.0
