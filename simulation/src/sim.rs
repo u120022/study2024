@@ -209,31 +209,120 @@ impl Default for SimVar {
                     large_prob: 0.1,
                 },
             ],
-            ped_flows: vec![],
+            ped_flows: vec![
+                PedFlow {
+                    dir: PedFlowDir::NxNy2PxNy,
+                    density: 0.1,
+                    v_in_mean: 1.0,
+                    v_in_stdv: 0.1,
+                    x_in_mean: 0.0,
+                    x_in_stdv: 0.1,
+                    d_in_mean: 0.0,
+                    d_in_stdv: 0.1,
+                    diagonal_prob: 0.1,
+                },
+                PedFlow {
+                    dir: PedFlowDir::PxNy2PxPy,
+                    density: 0.1,
+                    v_in_mean: 1.0,
+                    v_in_stdv: 0.1,
+                    x_in_mean: 0.0,
+                    x_in_stdv: 0.1,
+                    d_in_mean: 0.0,
+                    d_in_stdv: 0.1,
+                    diagonal_prob: 0.1,
+                },
+                PedFlow {
+                    dir: PedFlowDir::PxPy2NxPy,
+                    density: 0.1,
+                    v_in_mean: 1.0,
+                    v_in_stdv: 0.1,
+                    x_in_mean: 0.0,
+                    x_in_stdv: 0.1,
+                    d_in_mean: 0.0,
+                    d_in_stdv: 0.1,
+                    diagonal_prob: 0.1,
+                },
+                PedFlow {
+                    dir: PedFlowDir::NxPy2NxNy,
+                    density: 0.1,
+                    v_in_mean: 1.0,
+                    v_in_stdv: 0.1,
+                    x_in_mean: 0.0,
+                    x_in_stdv: 0.1,
+                    d_in_mean: 0.0,
+                    d_in_stdv: 0.1,
+                    diagonal_prob: 0.1,
+                },
+                PedFlow {
+                    dir: PedFlowDir::PxNy2NxNy,
+                    density: 0.1,
+                    v_in_mean: 1.0,
+                    v_in_stdv: 0.1,
+                    x_in_mean: 0.0,
+                    x_in_stdv: 0.1,
+                    d_in_mean: 0.0,
+                    d_in_stdv: 0.1,
+                    diagonal_prob: 0.1,
+                },
+                PedFlow {
+                    dir: PedFlowDir::PxPy2PxNy,
+                    density: 0.1,
+                    v_in_mean: 1.0,
+                    v_in_stdv: 0.1,
+                    x_in_mean: 0.0,
+                    x_in_stdv: 0.1,
+                    d_in_mean: 0.0,
+                    d_in_stdv: 0.1,
+                    diagonal_prob: 0.1,
+                },
+                PedFlow {
+                    dir: PedFlowDir::NxPy2PxPy,
+                    density: 0.1,
+                    v_in_mean: 1.0,
+                    v_in_stdv: 0.1,
+                    x_in_mean: 0.0,
+                    x_in_stdv: 0.1,
+                    d_in_mean: 0.0,
+                    d_in_stdv: 0.1,
+                    diagonal_prob: 0.1,
+                },
+                PedFlow {
+                    dir: PedFlowDir::NxNy2NxPy,
+                    density: 0.1,
+                    v_in_mean: 1.0,
+                    v_in_stdv: 0.1,
+                    x_in_mean: 0.0,
+                    x_in_stdv: 0.1,
+                    d_in_mean: 0.0,
+                    d_in_stdv: 0.1,
+                    diagonal_prob: 0.1,
+                },
+            ],
             ig_ped_flows: vec![],
         }
     }
 }
 
 impl SimVar {
-    fn gen_field_var(&self) -> FieldVar {
-        FieldVar {
-            angle: self.angle,
-            radius: self.radius,
-            width_along: self.width_along,
-            width_across: self.width_across,
-            lane_along: self.lane_along.clone(),
-            lane_across: self.lane_across.clone(),
-            hn_along: self.hn_along,
-            hn_across: self.hn_across,
-            cw_setback_along: self.cw_setback_along,
-            cw_setback_across: self.cw_setback_across,
-            cw_width_along: self.cw_width_along,
-            cw_width_across: self.cw_width_across,
-            sl_setback_along: self.sl_setback_along,
-            sl_setback_across: self.sl_setback_across,
-        }
-    }
+    // fn gen_field_var(&self) -> FieldVar {
+    //     FieldVar {
+    //         angle: self.angle,
+    //         radius: self.radius,
+    //         width_along: self.width_along,
+    //         width_across: self.width_across,
+    //         lane_along: self.lane_along.clone(),
+    //         lane_across: self.lane_across.clone(),
+    //         hn_along: self.hn_along,
+    //         hn_across: self.hn_across,
+    //         cw_setback_along: self.cw_setback_along,
+    //         cw_setback_across: self.cw_setback_across,
+    //         cw_width_along: self.cw_width_along,
+    //         cw_width_across: self.cw_width_across,
+    //         sl_setback_along: self.sl_setback_along,
+    //         sl_setback_across: self.sl_setback_across,
+    //     }
+    // }
 
     fn gen_lt_veh_var(&self, rng: &mut impl rand::Rng, index: usize) -> LtVehVar {
         let flow = &self.lt_veh_flows[index];
@@ -374,7 +463,7 @@ impl SimVar {
                 | (VehFlowDir::Ny2Nx(_, _), PedFlowDir::NxPy2NxNy) => {
                     lt_veh_flow += sub_flow.density;
                 }
-                _ => unreachable!(),
+                _ => {}
             }
         }
 
@@ -529,22 +618,35 @@ struct RtVehGroup {
     transform_vec: Vec<nalgebra::Isometry2<f64>>,
 }
 
+#[derive(Debug, Clone, Default)]
+struct PedGroup {
+    spawn_next_secs: f64,
+    spawn_wait_secs: f64,
+    var_vec: Vec<PedVar>,
+    data_vec: Vec<PedData>,
+    step_vec: Vec<usize>,
+    transform_vec: Vec<nalgebra::Isometry2<f64>>,
+}
+
 #[derive(Debug, Clone)]
 pub struct SimRuntime {
     var: SimVar,
     lt_veh_sim: Vec<LtVehGroup>,
     rt_veh_sim: Vec<RtVehGroup>,
+    ped_sim: Vec<PedGroup>,
 }
 
 impl SimRuntime {
     pub fn new(var: SimVar) -> Self {
         let lt_veh_sim = vec![Default::default(); var.lt_veh_flows.len()];
         let rt_veh_sim = vec![Default::default(); var.rt_veh_flows.len()];
+        let ped_sim = vec![Default::default(); var.ped_flows.len()];
 
         Self {
             var,
             lt_veh_sim,
             rt_veh_sim,
+            ped_sim,
         }
     }
 
@@ -735,6 +837,104 @@ impl SimRuntime {
 
             for i in 0..data_len {
                 sim.step_vec[i] += (delta_secs / LtVehData::STEP) as usize;
+            }
+
+            let mut remove_queue = vec![];
+            for i in 0..data_len {
+                if sim.step_vec[i] >= sim.data_vec[i].max_step {
+                    remove_queue.push(i);
+                }
+            }
+            for i in remove_queue.into_iter().rev() {
+                sim.var_vec.swap_remove(i);
+                sim.data_vec.swap_remove(i);
+                sim.step_vec.swap_remove(i);
+            }
+        }
+
+        // pedestrian
+        let flow_len = self.var.ped_flows.len();
+        for i in 0..flow_len {
+            let flow = &self.var.ped_flows[i];
+
+            let sim = &mut self.ped_sim[i];
+
+            sim.spawn_wait_secs += delta_secs;
+
+            if sim.spawn_wait_secs > sim.spawn_next_secs {
+                let var = self.var.gen_ped_var(&mut rng, i);
+                let Some(data) = PedData::sample(&mut rng, &var) else {
+                    continue;
+                };
+                let step = 0;
+
+                let transform = match flow.dir {
+                    PedFlowDir::NxNy2PxNy => {
+                        let y = self.var.width_across * 0.5;
+                        let x_min = -self.var.cw_setback_across;
+                        let origin: [f64; 2] = (r * nalgebra::Point2::new(x_min, y)).into();
+                        nalgebra::Isometry2::new(origin.into(), r.angle() + std::f64::consts::PI)
+                    }
+                    PedFlowDir::PxNy2PxPy => {
+                        let y = -self.var.width_along * 0.5;
+                        let x_min = self.var.cw_setback_along;
+                        let origin: [f64; 2] = nalgebra::Point2::new(x_min, y).into();
+                        nalgebra::Isometry2::new(origin.into(), Default::default())
+                    }
+                    PedFlowDir::PxPy2NxPy => {
+                        let y = -self.var.width_across * 0.5;
+                        let x_min = self.var.cw_setback_across;
+                        let origin: [f64; 2] = (r * nalgebra::Point2::new(x_min, y)).into();
+                        nalgebra::Isometry2::new(origin.into(), r.angle())
+                    }
+                    PedFlowDir::NxPy2NxNy => {
+                        let y = self.var.width_along * 0.5;
+                        let x_min = -self.var.cw_setback_along;
+                        let origin: [f64; 2] = nalgebra::Point2::new(x_min, y).into();
+                        nalgebra::Isometry2::new(origin.into(), std::f64::consts::PI)
+                    }
+
+                    PedFlowDir::PxNy2NxNy => {
+                        let y = -self.var.width_across * 0.5;
+                        let x_min = -self.var.cw_setback_across - self.var.cw_width_across;
+                        let origin: [f64; 2] = (r * nalgebra::Point2::new(x_min, y)).into();
+                        nalgebra::Isometry2::new(origin.into(), r.angle())
+                    }
+                    PedFlowDir::PxPy2PxNy => {
+                        let y = self.var.width_along * 0.5;
+                        let x_min = self.var.cw_setback_along + self.var.cw_width_along;
+                        let origin: [f64; 2] = nalgebra::Point2::new(x_min, y).into();
+                        nalgebra::Isometry2::new(origin.into(), std::f64::consts::PI)
+                    }
+                    PedFlowDir::NxPy2PxPy => {
+                        let y = self.var.width_across * 0.5;
+                        let x_min = self.var.cw_setback_across + self.var.cw_width_across;
+                        let origin: [f64; 2] = (r * nalgebra::Point2::new(x_min, y)).into();
+                        nalgebra::Isometry2::new(origin.into(), r.angle() + std::f64::consts::PI)
+                    }
+                    PedFlowDir::NxNy2NxPy => {
+                        let y = -self.var.width_along * 0.5;
+                        let x_min = -self.var.cw_setback_along - self.var.cw_width_along;
+                        let origin: [f64; 2] = nalgebra::Point2::new(x_min, y).into();
+                        nalgebra::Isometry2::new(origin.into(), Default::default())
+                    }
+                };
+
+                sim.var_vec.push(var);
+                sim.data_vec.push(data);
+                sim.step_vec.push(step);
+                sim.transform_vec.push(transform);
+
+                let lambda = flow.density * flow.v_in_mean;
+                let distr = rand_distr::Exp::new(lambda).unwrap();
+                sim.spawn_next_secs = rand::Rng::sample(&mut rng, distr);
+                sim.spawn_wait_secs = 0.0;
+            }
+
+            let data_len = sim.data_vec.len();
+
+            for i in 0..data_len {
+                sim.step_vec[i] += (delta_secs / PedData::STEP) as usize;
             }
 
             let mut remove_queue = vec![];
@@ -1002,6 +1202,24 @@ impl SimComponent {
             let flow_len = runtime.rt_veh_sim.len();
             for i in 0..flow_len {
                 let flow = &runtime.rt_veh_sim[i];
+                let data_len = flow.data_vec.len();
+
+                for i in 0..data_len {
+                    let data = &flow.data_vec[i];
+                    let step = &flow.step_vec[i];
+                    let tx = &flow.transform_vec[i];
+
+                    let point = data.trajectory_series[*step];
+                    let point: [f64; 2] = (tx * nalgebra::Point2::from(point)).into();
+                    let point = egui_plot::Points::new(point).color(egui::Color32::WHITE);
+                    points.push(point);
+                }
+            }
+
+            // pedestrian
+            let flow_len = runtime.ped_sim.len();
+            for i in 0..flow_len {
+                let flow = &runtime.ped_sim[i];
                 let data_len = flow.data_vec.len();
 
                 for i in 0..data_len {

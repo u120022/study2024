@@ -22,8 +22,7 @@ impl PedComponent {
             let widget = egui::Slider::new(&mut self.var.x_init, -10.0..=10.0).text("Init x[m]");
             ui.add(widget);
 
-            let widget =
-                egui::Slider::new(&mut self.var.width, 0.0..=30.0).text("Road width[m]");
+            let widget = egui::Slider::new(&mut self.var.width, 0.0..=30.0).text("Road width[m]");
             ui.add(widget);
 
             let widget =
@@ -96,6 +95,14 @@ impl PedComponent {
                         plot_ui.hline(egui_plot::HLine::new(self.var.cw_width));
                         plot_ui.line(egui_plot::Line::new(position_series));
                     });
+
+                ui.label("Trajectory XY Plot");
+                egui_plot::Plot::new("Trajectory XY Plot")
+                    .view_aspect(2.0)
+                    .allow_scroll(false)
+                    .show(ui, |plot_ui| {
+                        plot_ui.line(egui_plot::Line::new(data.trajectory_series.clone()));
+                    });
             }
         })
         .response
@@ -144,9 +151,13 @@ pub struct PedData {
     pub x_1: f64,
     pub x_2: f64,
     pub x_3: f64,
+    pub max_step: usize,
+    pub trajectory_series: Vec<[f64; 2]>,
 }
 
 impl PedData {
+    pub const STEP: f64 = 0.001;
+
     pub fn sample(rng: &mut impl rand::Rng, var: &PedVar) -> Option<Self> {
         // first half velocity
         let a = nalgebra::vector![7.47, 0.0, 0.720, 4.19, 1.93];
@@ -275,12 +286,34 @@ impl PedData {
         let x_3 = rand_distr::Weibull::new(scale, shape).unwrap();
         let x_3 = rand::Rng::sample(rng, x_3).max(0.0).min(var.cw_width);
 
+        let mut trajectory_series = vec![];
+        let (mut x, mut y) = (0.0, 0.0);
+
+        let dir = (nalgebra::point![x_1, var.width * 0.5] - nalgebra::point![var.x_init, 0.0])
+            .normalize();
+        while y <= var.width * 0.5 {
+            x += dir.x * v_1 * Self::STEP;
+            y += dir.y * v_1 * Self::STEP;
+            trajectory_series.push([x, y]);
+        }
+        let dir =
+            (nalgebra::point![x_2, var.width] - nalgebra::point![x_1, var.width * 0.5]).normalize();
+        while y <= var.width {
+            x += dir.x * v_2 * Self::STEP;
+            y += dir.y * v_2 * Self::STEP;
+            trajectory_series.push([x, y]);
+        }
+
+        let max_step = trajectory_series.len();
+
         Some(Self {
             v_1,
             v_2,
             x_1,
             x_2,
             x_3,
+            max_step,
+            trajectory_series,
         })
     }
 }
