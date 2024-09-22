@@ -1,131 +1,103 @@
-mod math;
+mod plot;
+mod settings;
+mod widget;
 
-mod field;
-mod ig_ped;
-mod lt_veh;
-mod ped;
-mod rt_veh;
-mod sim;
+use egui_miniquad as egui_mq;
+use miniquad as mq;
 
-use std::sync::{Arc, Mutex};
-
-use eframe::egui;
-
-use field::*;
-use ig_ped::*;
-use lt_veh::*;
-use ped::*;
-use rt_veh::*;
-use sim::*;
-
-fn main() -> eframe::Result {
-    // Log to stderr (if you run with `RUST_LOG=debug`).
-    env_logger::init();
-
-    eframe::run_native(
-        "Simulation",
-        eframe::NativeOptions::default(),
-        Box::new(|_| Ok(Box::new(App::new()))),
-    )
+struct State {
+    egui_mq: egui_miniquad::EguiMq,
+    mq_ctx: Box<dyn mq::RenderingBackend>,
+    widget: widget::Widget,
 }
 
-#[derive(Debug, Clone, Default)]
-enum AppState {
-    #[default]
-    Sim,
-    Field,
-    LtVeh,
-    RtVeh,
-    Ped,
-    IgPed,
-}
-
-struct App {
-    state: AppState,
-    field: FieldComponent,
-    lt_veh: LtVehComponent,
-    rt_veh: RtVehComponent,
-    ped: PedComponent,
-    ig_ped: IgPedComponent,
-    sim: Arc<Mutex<SimComponent>>,
-    _thread: Option<std::thread::JoinHandle<()>>,
-}
-
-impl App {
+impl State {
     fn new() -> Self {
-        let mut slf = Self {
-            state: Default::default(),
-            field: Default::default(),
-            lt_veh: Default::default(),
-            rt_veh: Default::default(),
-            ped: Default::default(),
-            ig_ped: Default::default(),
-            sim: Default::default(),
-            _thread: Default::default(),
-        };
-
-        let sim = slf.sim.clone();
-        let mut instant = std::time::Instant::now();
-
-        let thread = std::thread::spawn(move || loop {
-            {
-                let sim = &mut sim.lock().unwrap();
-                let pre = std::mem::replace(&mut instant, std::time::Instant::now());
-                sim.forward(pre.elapsed().as_secs_f64());
-            }
-            std::thread::sleep(std::time::Duration::from_millis(10));
-        });
-        slf._thread = Some(thread);
-
-        slf
+        let mut mq_ctx = mq::window::new_rendering_backend();
+        Self {
+            egui_mq: egui_mq::EguiMq::new(&mut *mq_ctx),
+            mq_ctx,
+            widget: widget::Widget::new(),
+        }
     }
 }
 
-impl eframe::App for App {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                if ui.button("Simulation").clicked() {
-                    self.state = AppState::Sim;
-                }
-                if ui.button("Field").clicked() {
-                    self.state = AppState::Field;
-                }
-                if ui.button("Left-turned Vehicle").clicked() {
-                    self.state = AppState::LtVeh;
-                }
-                if ui.button("Right-turnd Vehicle").clicked() {
-                    self.state = AppState::RtVeh;
-                }
-                if ui.button("Pedestrian").clicked() {
-                    self.state = AppState::Ped;
-                }
-                if ui.button("Inter-green Pedestrian").clicked() {
-                    self.state = AppState::IgPed;
-                }
-            });
+impl mq::EventHandler for State {
+    fn update(&mut self) {}
 
-            egui::ScrollArea::vertical().show(ui, |ui| match self.state {
-                AppState::Sim => {
-                    let comp = &mut self.sim.lock().unwrap();
-                    comp.ui(ui);
-                }
-                AppState::Field => {
-                    self.field.ui(ui);
-                }
-                AppState::LtVeh => {
-                    self.lt_veh.ui(ui);
-                }
-                AppState::RtVeh => {
-                    self.rt_veh.ui(ui);
-                }
-                AppState::Ped => {
-                    self.ped.ui(ui);
-                }
-                AppState::IgPed => {
-                    self.ig_ped.ui(ui);
-                }
-            });
+    fn draw(&mut self) {
+        self.mq_ctx
+            .begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
+        self.mq_ctx.end_render_pass();
+
+        self.egui_mq.run(&mut *self.mq_ctx, |_mq_ctx, egui_ctx| {
+            self.widget.show(egui_ctx);
         });
+
+        // Draw things behind egui here
+
+        self.egui_mq.draw(&mut *self.mq_ctx);
+
+        // Draw things in front of egui here
+
+        self.mq_ctx.commit_frame();
     }
+
+    fn mouse_motion_event(&mut self, x: f32, y: f32) {
+        self.egui_mq.mouse_motion_event(x, y);
+    }
+
+    fn mouse_wheel_event(&mut self, dx: f32, dy: f32) {
+        #[cfg(target_os = "windows")]
+        let (dx, dy) = (dx / 120.0, dy / 120.0);
+
+        self.egui_mq.mouse_wheel_event(dx, dy);
+    }
+
+    fn mouse_button_down_event(&mut self, mb: mq::MouseButton, x: f32, y: f32) {
+        self.egui_mq.mouse_button_down_event(mb, x, y);
+    }
+
+    fn mouse_button_up_event(&mut self, mb: mq::MouseButton, x: f32, y: f32) {
+        self.egui_mq.mouse_button_up_event(mb, x, y);
+    }
+
+    fn char_event(&mut self, character: char, _keymods: mq::KeyMods, _repeat: bool) {
+        self.egui_mq.char_event(character);
+    }
+
+    fn key_down_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods, _repeat: bool) {
+        self.egui_mq.key_down_event(keycode, keymods);
+    }
+
+    fn key_up_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods) {
+        self.egui_mq.key_up_event(keycode, keymods);
+    }
+}
+
+fn main() {
+    fern::Dispatch::default()
+        .format(|o, msg, record| {
+            o.finish(format_args!(
+                "[{} {} {}] {}",
+                humantime::format_rfc3339(std::time::SystemTime::now()),
+                record.level(),
+                record.target(),
+                msg
+            ));
+        })
+        .chain(std::io::stdout())
+        .apply()
+        .unwrap();
+
+    let conf = mq::conf::Conf {
+        window_title: "safety-traffic-simulation".into(),
+        window_width: 1280,
+        window_height: 720,
+        high_dpi: true,
+        icon: None,
+        ..Default::default()
+    };
+
+    mq::start(conf, || Box::new(State::new()));
 }
