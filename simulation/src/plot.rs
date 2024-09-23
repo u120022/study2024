@@ -1,9 +1,13 @@
 use crate::*;
 
-const ROAD_LENGTH: f64 = 64.0;
+pub const ROAD_LENGTH: f64 = 64.0;
 
 impl settings::Settings {
-    pub fn show_simulation_inside(&mut self, ui: &mut egui::Ui) {
+    pub fn show_simulation_inside(
+        &mut self,
+        ui: &mut egui::Ui,
+        overlay_fn: impl FnOnce(&mut egui_plot::PlotUi),
+    ) {
         let mut points = vec![];
         let mut lines = vec![];
 
@@ -195,10 +199,15 @@ impl settings::Settings {
             .show(ui, |plot_ui| {
                 lines.into_iter().for_each(|v| plot_ui.line(v));
                 points.into_iter().for_each(|v| plot_ui.points(v));
+                overlay_fn(plot_ui);
             });
     }
 
-    pub fn show_schedule_inside(&mut self, ui: &mut egui::Ui) {
+    pub fn show_schedule_inside(
+        &mut self,
+        ui: &mut egui::Ui,
+        overlay_fn: impl FnOnce(&mut egui_plot::PlotUi),
+    ) {
         // Vehicle signals
         let mut texts = vec![];
         let mut lines = vec![];
@@ -260,6 +269,7 @@ impl settings::Settings {
             .show(ui, |plot_ui| {
                 texts.into_iter().for_each(|v| plot_ui.text(v));
                 lines.into_iter().for_each(|v| plot_ui.line(v));
+                overlay_fn(plot_ui);
             });
     }
 }

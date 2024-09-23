@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Dir {
     NxPy,
     NxNy,
@@ -210,6 +210,7 @@ impl PedFlow {
 pub struct VehSignal {
     pub src_dir: Dir,
     pub dst_dir: Dir,
+    pub cycle_secs: f64,
     pub offset_secs: f64,
     pub green_secs: f64,
     pub yellow_secs: f64,
@@ -221,6 +222,7 @@ impl Default for VehSignal {
         Self {
             src_dir: Dir::NxPy,
             dst_dir: Dir::PxPy,
+            cycle_secs: 240.0,
             offset_secs: 0.0,
             green_secs: 110.0,
             yellow_secs: 5.0,
@@ -259,6 +261,10 @@ impl VehSignal {
                 });
 
             let widget =
+                egui::Slider::new(&mut self.cycle_secs, 0.0..=600.0).text("Cycle time[sec]");
+            ui.add(widget);
+
+            let widget =
                 egui::Slider::new(&mut self.offset_secs, 0.0..=600.0).text("Offset time[sec]");
             ui.add(widget);
 
@@ -280,6 +286,7 @@ impl VehSignal {
 pub struct PedSignal {
     pub src_dir: Dir,
     pub dst_dir: Dir,
+    pub cycle_secs: f64,
     pub offset_secs: f64,
     pub green_secs: f64,
     pub blink_secs: f64,
@@ -291,6 +298,7 @@ impl Default for PedSignal {
         Self {
             src_dir: Dir::NxNy,
             dst_dir: Dir::NxPy,
+            cycle_secs: 240.0,
             offset_secs: 120.0,
             green_secs: 100.0,
             blink_secs: 10.0,
@@ -327,6 +335,10 @@ impl PedSignal {
                     ui.selectable_value(&mut self.dst_dir, Dir::PyNx, "+Y-X");
                     ui.selectable_value(&mut self.dst_dir, Dir::PyPx, "+Y+X");
                 });
+
+            let widget =
+                egui::Slider::new(&mut self.cycle_secs, 0.0..=600.0).text("Cycle time[sec]");
+            ui.add(widget);
 
             let widget =
                 egui::Slider::new(&mut self.offset_secs, 0.0..=600.0).text("Offset time[sec]");
@@ -545,14 +557,14 @@ impl Default for Settings {
                     ..Default::default()
                 },
                 VehSignal {
-                    src_dir: Dir::NyPx,
-                    dst_dir: Dir::PyPx,
+                    src_dir: Dir::PyPx,
+                    dst_dir: Dir::NyPx,
                     offset_secs: 120.0,
                     ..Default::default()
                 },
                 VehSignal {
-                    src_dir: Dir::PyNx,
-                    dst_dir: Dir::NyNx,
+                    src_dir: Dir::NyNx,
+                    dst_dir: Dir::PyNx,
                     offset_secs: 120.0,
                     ..Default::default()
                 },
@@ -571,14 +583,14 @@ impl Default for Settings {
                     ..Default::default()
                 },
                 PedSignal {
-                    src_dir: Dir::NyPx,
-                    dst_dir: Dir::NyNx,
+                    src_dir: Dir::NyNx,
+                    dst_dir: Dir::NyPx,
                     offset_secs: 0.0,
                     ..Default::default()
                 },
                 PedSignal {
-                    src_dir: Dir::PyPx,
-                    dst_dir: Dir::PyNx,
+                    src_dir: Dir::PyNx,
+                    dst_dir: Dir::PyPx,
                     offset_secs: 0.0,
                     ..Default::default()
                 },

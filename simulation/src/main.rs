@@ -1,3 +1,4 @@
+mod forward;
 mod plot;
 mod settings;
 mod widget;
@@ -9,15 +10,18 @@ struct State {
     egui_mq: egui_miniquad::EguiMq,
     mq_ctx: Box<dyn mq::RenderingBackend>,
     widget: widget::Widget,
+    _thread_handle: std::thread::JoinHandle<()>,
 }
 
 impl State {
     fn new() -> Self {
         let mut mq_ctx = mq::window::new_rendering_backend();
+        let mut widget = widget::Widget::new();
         Self {
             egui_mq: egui_mq::EguiMq::new(&mut *mq_ctx),
             mq_ctx,
-            widget: widget::Widget::new(),
+            _thread_handle: widget.spawn_simulation(),
+            widget,
         }
     }
 }

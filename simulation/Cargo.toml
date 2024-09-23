@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+ahash = "0.8"
 egui = "0.28"
 egui-miniquad = "0.15"
 egui_plot = "0.28"
