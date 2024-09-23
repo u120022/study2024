@@ -1,4 +1,4 @@
-use crate::settings;
+use crate::{compute, settings};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum VehSignalState {
@@ -20,6 +20,7 @@ pub struct Forward {
     pub veh_signals: ahash::AHashMap<[settings::Dir; 2], VehSignalState>,
     pub ped_signals: ahash::AHashMap<[settings::Dir; 2], PedSignalState>,
     pub elapsed_time: f64,
+    pub trajectories: Vec<Vec<[f64; 2]>>,
 }
 
 impl Forward {
@@ -29,10 +30,12 @@ impl Forward {
             veh_signals: ahash::AHashMap::new(),
             ped_signals: ahash::AHashMap::new(),
             elapsed_time: 0.0,
+            trajectories: Default::default(),
         }
     }
 
     pub fn forward(&mut self, delta_secs: f64) {
+        // vehicle signals
         for i in 0..self.settings.veh_signals.len() {
             let signal = &self.settings.veh_signals[i];
 
@@ -53,6 +56,7 @@ impl Forward {
             }
         }
 
+        // pedestrian signals
         for i in 0..self.settings.ped_signals.len() {
             let signal = &self.settings.ped_signals[i];
 
@@ -73,11 +77,50 @@ impl Forward {
             }
         }
 
+        self.trajectories.clear();
+
+        // left-turn vehicle
+        for flow in &self.settings.lt_veh_flows {
+            if let Some(output) = compute::compute_lt_veh(&self.settings, flow) {
+                self.trajectories.push(output.trajectory_series);
+            }
+        }
+
+        // right-turn vehicle
+        for flow in &self.settings.rt_veh_flows {
+            if let Some(output) = compute::compute_rt_veh(&self.settings, flow) {
+                self.trajectories.push(output.trajectory_series);
+            }
+        }
+
+        // pedestrian
+        for flow in &self.settings.ped_flows {
+            if let Some(output) = compute::compute_ped(&self.settings, flow) {
+                self.trajectories.push(output.trajectory_series);
+            }
+        }
+
+        // inter-green pedestrian
+        for flow in &self.settings.ig_ped_flows {
+            if let Some(output) = compute::compute_ig_ped(&self.settings, flow) {
+                self.trajectories.push(output.trajectory_series);
+            }
+        }
+
         self.elapsed_time += delta_secs;
     }
 
     pub fn show_simulation_inside(&mut self, ui: &mut egui::Ui) {
-        self.settings.show_simulation_inside(ui, |_| {});
+        let mut lines = vec![];
+
+        for trajectory in &self.trajectories {
+            let line = egui_plot::Line::new(trajectory.clone());
+            lines.push(line);
+        }
+
+        self.settings.show_simulation_inside(ui, |plot_ui| {
+            lines.into_iter().for_each(|v| plot_ui.line(v));
+        });
     }
 
     pub fn show_schedule_inside(&mut self, ui: &mut egui::Ui) {

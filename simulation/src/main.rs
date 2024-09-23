@@ -1,6 +1,7 @@
 mod forward;
 mod plot;
 mod settings;
+mod compute;
 mod widget;
 
 use egui_miniquad as egui_mq;
