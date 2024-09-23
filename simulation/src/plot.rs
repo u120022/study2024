@@ -262,7 +262,7 @@ impl settings::Settings {
         }
 
         egui_plot::Plot::new("TLS schedule")
-            .height(100.0)
+            .height(200.0)
             .allow_scroll(false)
             .allow_zoom(false)
             .allow_drag(false)

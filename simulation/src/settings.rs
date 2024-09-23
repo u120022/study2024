@@ -131,14 +131,14 @@ impl Default for PedFlow {
         Self {
             src: Dir::NxPy,
             dst: Dir::NxNy,
-            density: 0.1,
+            density: 0.01,
             v_in_mean: 1.0,
             v_in_stdv: 0.1,
-            x_in_mean: 0.0,
-            x_in_stdv: 0.1,
-            d_in_mean: 0.0,
-            d_in_stdv: 0.1,
-            diagonal_prob: 0.1,
+            x_in_mean: 2.25,
+            x_in_stdv: 1.0,
+            d_in_mean: 1.0,
+            d_in_stdv: 0.5,
+            diagonal_prob: 0.3,
         }
     }
 }
@@ -544,6 +544,7 @@ impl Default for Settings {
                 },
             ],
             veh_signals: vec![
+                // straight
                 VehSignal {
                     src_dir: Dir::NxPy,
                     dst_dir: Dir::PxPy,
@@ -565,6 +566,56 @@ impl Default for Settings {
                 VehSignal {
                     src_dir: Dir::NyNx,
                     dst_dir: Dir::PyNx,
+                    offset_secs: 120.0,
+                    ..Default::default()
+                },
+                // left-turned
+                VehSignal {
+                    src_dir: Dir::NxPy,
+                    dst_dir: Dir::PyNx,
+                    offset_secs: 0.0,
+                    ..Default::default()
+                },
+                VehSignal {
+                    src_dir: Dir::PyPx,
+                    dst_dir: Dir::PxPy,
+                    offset_secs: 120.0,
+                    ..Default::default()
+                },
+                VehSignal {
+                    src_dir: Dir::PxNy,
+                    dst_dir: Dir::NyPx,
+                    offset_secs: 0.0,
+                    ..Default::default()
+                },
+                VehSignal {
+                    src_dir: Dir::NyNx,
+                    dst_dir: Dir::NxNy,
+                    offset_secs: 120.0,
+                    ..Default::default()
+                },
+                // right-turned
+                VehSignal {
+                    src_dir: Dir::NxPy,
+                    dst_dir: Dir::NyPx,
+                    offset_secs: 0.0,
+                    ..Default::default()
+                },
+                VehSignal {
+                    src_dir: Dir::NyNx,
+                    dst_dir: Dir::PxPy,
+                    offset_secs: 120.0,
+                    ..Default::default()
+                },
+                VehSignal {
+                    src_dir: Dir::PxNy,
+                    dst_dir: Dir::PyNx,
+                    offset_secs: 0.0,
+                    ..Default::default()
+                },
+                VehSignal {
+                    src_dir: Dir::PyPx,
+                    dst_dir: Dir::NxNy,
                     offset_secs: 120.0,
                     ..Default::default()
                 },

@@ -619,10 +619,10 @@ pub fn compute_ped(settings: &Settings, flow: &PedFlow) -> Option<PedOutput> {
     let a_green = 0.0;
 
     let distr = rand_distr::Normal::new(flow.v_in_mean, flow.v_in_stdv).unwrap();
-    let v_init = rand::Rng::sample(rng, distr);
+    let v_in = rand::Rng::sample(rng, distr);
 
     let distr = rand_distr::Normal::new(flow.x_in_mean, flow.x_in_stdv).unwrap();
-    let x_init = rand::Rng::sample(rng, distr);
+    let x_in = rand::Rng::sample(rng, distr);
 
     let width = match (flow.src, flow.dst) {
         (Dir::NxNy, Dir::NxPy) | (Dir::NxPy, Dir::NxNy) => settings.width_along,
@@ -665,7 +665,7 @@ pub fn compute_ped(settings: &Settings, flow: &PedFlow) -> Option<PedOutput> {
     let diagonal = rand::Rng::sample(rng, distr) < flow.diagonal_prob;
     let diagonal_dummy = if diagonal { 1.0 } else { 0.0 };
 
-    let center_side = x_init < cw_width * 0.5;
+    let center_side = x_in < cw_width * 0.5;
     let center_side_dummy = if center_side { 1.0 } else { 0.0 };
 
     // TODO: implement the following parameters
@@ -727,20 +727,20 @@ pub fn compute_ped(settings: &Settings, flow: &PedFlow) -> Option<PedOutput> {
 
     // first half velocity
     let a = vector![7.47, 0.0, 0.720, 4.19, 1.93];
-    let x = vector![v_init, 0.0, width, far_side_dummy, 1.0];
+    let x = vector![v_in, 0.0, width, far_side_dummy, 1.0];
     let shape = a.dot(&x).max(f64::EPSILON);
     let b = vector![0.00391, 0.0, -0.00106, -0.00414, 0.00185, 0.0697];
-    let y = vector![v_init, 0.0, width, far_side_dummy, a_green, 1.0];
+    let y = vector![v_in, 0.0, width, far_side_dummy, a_green, 1.0];
     let scale = b.dot(&y).max(f64::EPSILON);
     let v_1 = rand_distr::Gamma::new(shape, scale).unwrap();
     let v_1 = rand::Rng::sample(rng, v_1);
 
     // last half velocity
     let a = vector![0.0, -2.10, 0.695, 4.10, 22.8];
-    let x = vector![v_init, v_1, width, far_side_dummy, 1.0];
+    let x = vector![v_in, v_1, width, far_side_dummy, 1.0];
     let shape = a.dot(&x).max(f64::EPSILON);
     let b = vector![0.0, 0.0199, -0.0006, -0.00159, 0.0, 0.0256];
-    let y = vector![v_init, v_1, width, far_side_dummy, a_green, 1.0];
+    let y = vector![v_in, v_1, width, far_side_dummy, a_green, 1.0];
     let scale = b.dot(&y).max(f64::EPSILON);
     let v_2 = rand_distr::Gamma::new(shape, scale).unwrap();
     let v_2 = rand::Rng::sample(rng, v_2);
@@ -753,7 +753,7 @@ pub fn compute_ped(settings: &Settings, flow: &PedFlow) -> Option<PedOutput> {
         far_side_dummy,
         diagonal_dummy,
         center_side_dummy,
-        x_init,
+        x_in,
         lt_veh_flow,
         forward_ped_flow,
         1.0
@@ -827,9 +827,9 @@ pub fn compute_ped(settings: &Settings, flow: &PedFlow) -> Option<PedOutput> {
     let x_3 = rand::Rng::sample(rng, x_3).max(0.0).min(cw_width);
 
     let mut trajectory_series = vec![];
-    let (mut x, mut y) = (0.0, 0.0);
+    let (mut x, mut y) = (x_in, 0.0);
 
-    let dir = (point![x_1, width * 0.5] - point![x_init, 0.0]).normalize();
+    let dir = (point![x_1, width * 0.5] - point![x_in, 0.0]).normalize();
     while y <= width * 0.5 {
         x += dir.x * v_1 * STEP;
         y += dir.y * v_1 * STEP;
@@ -866,13 +866,13 @@ pub fn compute_ig_ped(settings: &Settings, flow: &PedFlow) -> Option<PedOutput> 
     let t_blink = 0.0;
 
     let distr = rand_distr::Normal::new(flow.v_in_mean, flow.v_in_stdv).unwrap();
-    let v_init = rand::Rng::sample(rng, distr);
+    let v_in = rand::Rng::sample(rng, distr);
 
     let distr = rand_distr::Normal::new(flow.x_in_mean, flow.x_in_stdv).unwrap();
-    let x_init = rand::Rng::sample(rng, distr);
+    let x_in = rand::Rng::sample(rng, distr);
 
     let distr = rand_distr::Normal::new(flow.d_in_mean, flow.d_in_stdv).unwrap();
-    let d_init = rand::Rng::sample(rng, distr);
+    let d_in = rand::Rng::sample(rng, distr);
 
     let width = match (flow.src, flow.dst) {
         (Dir::NxNy, Dir::NxPy) | (Dir::NxPy, Dir::NxNy) => settings.width_along,
@@ -915,7 +915,7 @@ pub fn compute_ig_ped(settings: &Settings, flow: &PedFlow) -> Option<PedOutput> 
     let diagonal = rand::Rng::sample(rng, distr) < flow.diagonal_prob;
     let diagonal_dummy = if diagonal { 1.0 } else { 0.0 };
 
-    let center_side = x_init < cw_width * 0.5;
+    let center_side = x_in < cw_width * 0.5;
     let center_side_dummy = if center_side { 1.0 } else { 0.0 };
 
     // TODO: implement the following parameters
@@ -977,10 +977,10 @@ pub fn compute_ig_ped(settings: &Settings, flow: &PedFlow) -> Option<PedOutput> 
 
     // contact velocity
     let a = nalgebra::matrix![0.256, 24.1];
-    let x = nalgebra::matrix![d_init, 1.0];
+    let x = nalgebra::matrix![d_in, 1.0];
     let shape = a.dot(&x).max(f64::EPSILON);
     let b = nalgebra::matrix![0.0379, 0.0218];
-    let y = nalgebra::matrix![v_init, 1.0];
+    let y = nalgebra::matrix![v_in, 1.0];
     let scale = b.dot(&y).max(f64::EPSILON);
     let v_0 = rand_distr::Gamma::new(shape, scale).unwrap();
     let v_0 = rand::Rng::sample(rng, v_0);
@@ -1019,7 +1019,7 @@ pub fn compute_ig_ped(settings: &Settings, flow: &PedFlow) -> Option<PedOutput> 
         far_side_dummy,
         diagonal_dummy,
         center_side_dummy,
-        x_init,
+        x_in,
         lt_veh_flow,
         forward_ped_flow,
         1.0
@@ -1093,9 +1093,9 @@ pub fn compute_ig_ped(settings: &Settings, flow: &PedFlow) -> Option<PedOutput> 
     let x_3 = rand::Rng::sample(rng, x_3).max(0.0).min(cw_width);
 
     let mut trajectory_series = vec![];
-    let (mut x, mut y) = (0.0, 0.0);
+    let (mut x, mut y) = (x_in, 0.0);
 
-    let dir = (point![x_1, width * 0.5] - point![x_init, 0.0]).normalize();
+    let dir = (point![x_1, width * 0.5] - point![x_in, 0.0]).normalize();
     while y <= width * 0.5 {
         x += dir.x * v_1 * STEP;
         y += dir.y * v_1 * STEP;
