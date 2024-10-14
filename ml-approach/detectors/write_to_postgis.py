@@ -1,8 +1,18 @@
-import pandas as pd
 import geopandas as gpd
+import pandas as pd
 import sqlalchemy
 
-df = pd.read_csv("data.csv")
+
+# input csv file
+INPUT_FILE = "data.csv"
+
+gpd.options.io_engine = "pyogrio"
+
+# read input from csv file
+
+df = pd.read_csv(INPUT_FILE)
+
+# transform data
 
 df = df.rename(columns={
     "情報源コード": "src_code",
@@ -20,5 +30,8 @@ gdf = gpd.GeoDataFrame(
     crs="EPSG:6668"
 )
 
+# write output to postgis
+
 engine = sqlalchemy.create_engine("postgresql://postgis:0@localhost:5432/postgis")
-gdf.to_postgis("detectors", engine)
+
+gdf.to_postgis("detectors", engine, if_exists="replace")

@@ -1,21 +1,30 @@
-import sqlalchemy
-import osmnx.graph
+import geopandas as gpd
 import osmnx.convert
 import osmnx.geocoder
+import osmnx.graph
 import osmnx.utils_geo
-import geopandas as gpd
+import sqlalchemy
+
+
+# osm search query
+QUERY = "Tokyo,Japan"
 
 gpd.options.io_engine = "pyogrio"
 
+# read osm data from internet
+
+df = osmnx.geocoder.geocode_to_gdf(QUERY)
+
+# concatenate all geometries
+
 nodes, edges = [], []
-df = osmnx.geocoder.geocode_to_gdf("Tokyo,Japan")
 geometry = df["geometry"].unary_union
 for geometry in list(geometry.geoms):
     try:
-        g = osmnx.graph.graph_from_polygon(geometry)
-        print(g)
+        graph = osmnx.graph.graph_from_polygon(geometry)
+        print(graph)
 
-        (node, edge) = osmnx.convert.graph_to_gdfs(g)
+        (node, edge) = osmnx.convert.graph_to_gdfs(graph)
         nodes.append(node[["street_count", "geometry"]])
         edges.append(edge[["highway", "oneway", "reversed", "length", "geometry"]])
     except Exception as e:
@@ -26,6 +35,8 @@ edge = gpd.pd.concat(edges)
 
 node = node.to_crs(6668)
 edge = edge.to_crs(6668)
+
+# write output to postgis
 
 engine = sqlalchemy.create_engine("postgresql://postgis:0@localhost:5432/postgis")
 

@@ -1,8 +1,16 @@
-/venv
+# local shell scripts
+*.local.sh
 
+# cargo
+target
+
+# data
 *.zip
 *.csv
 *.json
+*.db
+
+# gis
 *.dbf
 *.prj
 *.shp
