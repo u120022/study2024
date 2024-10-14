@@ -3,7 +3,6 @@ name = "measurement"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "fire>=0.7.0",
     "matplotlib>=3.9.2",
     "pandas>=2.2.3",
     "pytransform3d>=3.6.2",

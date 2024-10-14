@@ -9,6 +9,7 @@ target
 *.csv
 *.json
 *.db
+*.png
 
 # gis
 *.dbf
