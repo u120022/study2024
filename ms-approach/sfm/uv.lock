@@ -835,6 +835,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "hloc", marker = "(platform_machine != 'aarch64' and python_full_version >= '3.12') or (platform_system != 'Linux' and python_full_version >= '3.12') or platform_system == 'Darwin' or (platform_machine == 'aarch64' and platform_system == 'Linux')" },
+    { name = "matplotlib", marker = "(platform_machine != 'aarch64' and python_full_version >= '3.12') or (platform_system != 'Linux' and python_full_version >= '3.12') or platform_system == 'Darwin' or (platform_machine == 'aarch64' and platform_system == 'Linux')" },
 ]
 
 [package.dev-dependencies]
@@ -845,7 +846,10 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "hloc", git = "https://github.com/cvg/Hierarchical-Localization" }]
+requires-dist = [
+    { name = "hloc", git = "https://github.com/cvg/Hierarchical-Localization" },
+    { name = "matplotlib", specifier = ">=3.9.2" },
+]
 
 [package.metadata.requires-dev]
 dev = [
