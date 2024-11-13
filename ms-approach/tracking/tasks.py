@@ -15,7 +15,7 @@ def read_from_csv(args):
         raise FileNotFoundError(f"{args.input} not found")
 
     track = pd.read_csv(args.input, index_col=0)
-    print(f"finished reading to {input}")
+    print(f"finished reading to {args.input}")
 
     print("start to flatten the structured data field")
     box = track["box"].apply(lambda x: ast.literal_eval(x))
@@ -69,7 +69,7 @@ def transform(args):
 
         print("start to transform coordinate")
         batch_size = len(df.index)
-        track_data = [df["x"].values, df["y"].values]
+        track_data = [resolution[0] - df["x"].values, df["y"].values]
         # pixel coordinate point (x, y)
         p_p = np.array(track_data)
         # camera coordinate point (x, y, z)
@@ -178,4 +178,7 @@ if __name__ == "__main__":
     plot_parser.set_defaults(func=plot)
 
     args = parser.parse_args()
-    args.func(args)
+    if hasattr(args, "func"):
+        args.func(args)
+    else:
+        parser.print_help()

@@ -1,0 +1,16 @@
+[project]
+name = "tracking"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.9.2",
+    "pandas>=2.2.3",
+    "pytransform3d>=3.6.2",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "mypy>=1.11.2",
+    "pyright>=1.1.384",
+    "ruff>=0.6.9",
+]
