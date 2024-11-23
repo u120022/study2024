@@ -13,6 +13,7 @@ def main(
     image_list: Optional[Union[Path, List[str]]] = None,
     features: Optional[Path] = None,
     quadratic: bool = False,
+    quadratic_t: Optional[float] = None,
     overlap: Optional[int] = None,
 ):
     if image_list is not None:
@@ -32,14 +33,21 @@ def main(
     if overlap is None:
         overlap = 1
 
+    if quadratic_t is None:
+        quadratic_t = 1.0
+
+    shifts = []
+    for d in range(overlap):
+        if quadratic:
+            shifts.append(int(2.0 ** (d * quadratic_t)))
+        else:
+            shifts.append(d)
+    shifts = list(set(shifts))
+
     pairs = []
     for i, n1 in enumerate(names_q):
-        for d in range(overlap):
-            if quadratic:
-                j = i + (1 << d)
-            else:
-                j = i + d
-
+        for shift in shifts:
+            j = i + shift
             if j < len(names_q):
                 n2 = names_q[j]
                 pairs.append((n1, n2))
