@@ -5,6 +5,8 @@ requires-python = ">=3.12"
 dependencies = [
     "hloc",
     "matplotlib>=3.9.2",
+    "opencv-python>=4.10.0.84",
+    "ultralytics>=8.3.40",
 ]
 
 [tool.uv]

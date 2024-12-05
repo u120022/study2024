@@ -4,17 +4,20 @@ import os
 import pathlib
 import subprocess
 
+import cv2
 import hloc
 import hloc.extract_features
 import hloc.match_features
 import hloc.reconstruction
 import matplotlib.pyplot as plt
+import numpy as np
+import ultralytics
 
 import pairs_from_sequential
 
 
 def preprocess(args):
-    for path in glob.glob(args.input):
+    for path in args.input:
         input_path = pathlib.Path(path)
         output_dir = pathlib.Path("{}.sfm/images".format(path))
 
@@ -24,9 +27,34 @@ def preprocess(args):
         subprocess.Popen(["ffmpeg", "-i", input_path, "-vf", "scale=1280:720", "-c:v", "png", "-r", "30", output_path]).wait()
 
 
-def sfm(args):
-    for path in glob.glob(args.input):
+def mask(args):
+    for path in args.input:
         image_dir = pathlib.Path("{}.sfm/images".format(path))
+        image_paths = glob.glob("{}/*.png".format(image_dir))
+        output_dir = pathlib.Path("{}.sfm/masks".format(path))
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        image_paths.sort()
+
+        model = ultralytics.YOLO("yolo11n-seg.pt")
+        classes = [0, 1, 2, 3, 5, 7] # person, bicycle, car, motorcycle, bus, truck
+        for results in model(image_paths, classes=classes, conf=0.5, device=0):
+            mask_image_path = "{}/{}".format(output_dir, pathlib.Path(results.path).name)
+
+            mask = np.full(results.orig_shape, 255, np.uint8)
+            contours = []
+            for contour in results:
+                contour = contour.masks.xy[0].astype(np.int32).reshape(-1, 1, 2)
+                contours.append(contour)
+            cv2.drawContours(mask, contours, -1, (0, 0, 0), cv2.FILLED)
+            cv2.imwrite(mask_image_path, mask)
+
+
+def sfm(args):
+    for path in args.input:
+        image_dir = pathlib.Path("{}.sfm/images".format(path))
+        mask_dir = pathlib.Path("{}.sfm/masks".format(path))
         features_path = pathlib.Path("{}.sfm/features.h5".format(path))
         pairs_path = pathlib.Path("{}.sfm/pairs.txt".format(path))
         matches_path = pathlib.Path("{}.sfm/matches.h5".format(path))
@@ -49,15 +77,40 @@ def sfm(args):
         print("match features")
         hloc.match_features.main(matcher_conf, pairs_path, features=features_path, matches=matches_path)
 
-        print("reconstruct")
-        hloc.reconstruction.main(sfm_dir, image_dir, pairs_path, features_path, matches_path, camera_mode=hloc.pycolmap.CameraMode.SINGLE)
+        if args.cparam:
+            camera_mode = hloc.pycolmap.CameraMode.SINGLE
+
+            image_options = {}
+            image_options["camera_model"] = "SIMPLE_RADIAL_FISHEYE"
+            image_options["camera_params"] = args.cparam
+            image_options["mask_path"] = mask_dir
+
+            mapper_options = {}
+            mapper_options["ignore_watermarks"] = True
+            mapper_options["ba_refine_focal_length"] = False
+            mapper_options["ba_refine_principal_point"] = False
+            mapper_options["ba_refine_extra_params"] = False
+
+            hloc.reconstruction.main(sfm_dir, image_dir, pairs_path, features_path, matches_path, camera_mode=camera_mode, image_options=image_options, mapper_options=mapper_options)
+        else:
+            camera_mode = hloc.pycolmap.CameraMode.SINGLE
+
+            image_options = {}
+            image_options["camera_model"] = "SIMPLE_RADIAL_FISHEYE"
+            image_options["camera_params"] = args.cparam
+            image_options["mask_path"] = mask_dir
+
+            mapper_options = {}
+            mapper_options["ignore_watermarks"] = True
+
+            hloc.reconstruction.main(sfm_dir, image_dir, pairs_path, features_path, matches_path, camera_mode=camera_mode, image_options=image_options)
 
 
 def plot(args):
-    for path in glob.glob("{}.sfm/sfm/models/*".format(args.input)):
+    for path in args.input:
         try:
-            model_path = pathlib.Path(path)
-            image_path = pathlib.Path("{}.png".format(path))
+            model_path = pathlib.Path("{}.sfm/sfm".format(path))
+            image_path = pathlib.Path("{}.sfm/track.png".format(path))
 
             model = hloc.pycolmap.Reconstruction(model_path)
             print(model.summary())
@@ -79,6 +132,7 @@ def plot(args):
 
 def pipeline(args):
     preprocess(args)
+    mask(args)
     sfm(args)
     plot(args)
 
@@ -88,19 +142,25 @@ if __name__ == "__main__":
     subparser = parser.add_subparsers(required=True)
 
     parser_preprocess = subparser.add_parser("preprocess")
-    parser_preprocess.add_argument("-i" "--input", type=str, required=True)
+    parser_preprocess.add_argument("-i", "--input", type=str, required=True, nargs="+")
     parser_preprocess.set_defaults(func=preprocess)
 
+    parser_mask = subparser.add_parser("mask")
+    parser_mask.add_argument("-i", "--input", type=str, required=True, nargs="+")
+    parser_mask.set_defaults(func=mask)
+
     parser_sfm = subparser.add_parser("sfm")
-    parser_sfm.add_argument("-i", "--input", type=str, required=True)
+    parser_sfm.add_argument("-i", "--input", type=str, required=True, nargs="+")
+    parser_sfm.add_argument("-c", "--cparam", type=str)
     parser_sfm.set_defaults(func=sfm)
 
     parser_plot = subparser.add_parser("plot")
-    parser_plot.add_argument("-i", "--input", type=str, required=True)
+    parser_plot.add_argument("-i", "--input", type=str, required=True, nargs="+")
     parser_plot.set_defaults(func=plot)
 
     parser_pipeline = subparser.add_parser("pipeline")
-    parser_pipeline.add_argument("-i", "--input", type=str, required=True)
+    parser_pipeline.add_argument("-i", "--input", type=str, required=True, nargs="+")
+    parser_pipeline.add_argument("-c", "--cparam", type=str)
     parser_pipeline.set_defaults(func=pipeline)
 
     args = parser.parse_args()
