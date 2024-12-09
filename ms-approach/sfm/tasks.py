@@ -97,7 +97,6 @@ def sfm(args):
 
             image_options = {}
             image_options["camera_model"] = "SIMPLE_RADIAL_FISHEYE"
-            image_options["camera_params"] = args.cparam
             image_options["mask_path"] = mask_dir
 
             mapper_options = {}
