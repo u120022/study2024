@@ -12,6 +12,7 @@ import hloc.reconstruction
 import matplotlib.pyplot as plt
 import numpy as np
 import ultralytics
+import sklearn.decomposition
 
 import pairs_from_sequential
 
@@ -109,21 +110,60 @@ def plot(args):
     for path in args.input:
         try:
             model_path = pathlib.Path("{}.sfm/sfm".format(path))
-            image_path = pathlib.Path("{}.sfm/track.png".format(path))
+            track_image_path = pathlib.Path("{}.sfm/track.png".format(path))
+            vel_image_path = pathlib.Path("{}.sfm/vel.png".format(path))
+            cur_image_path = pathlib.Path("{}.sfm/cur.png".format(path))
 
             model = hloc.pycolmap.Reconstruction(model_path)
             print(model.summary())
 
-            xs, ys = [], []
+            point_3d = np.zeros([len(model.images), 3])
             for _, image in model.images.items():
-                translation = image.cam_from_world.translation
-                xs.append(translation[0])
-                ys.append(translation[2])
+                point_3d[image.image_id - 1] = image.projection_center()
+
+            pca = sklearn.decomposition.PCA(n_components=2)
+            point_2d = pca.fit_transform(point_3d)
 
             fig, ax = plt.subplots()
-            ax.scatter(xs, ys)
-            fig.savefig(image_path)
-            print(image_path)
+            ax.scatter(point_2d.T[0], point_2d.T[1])
+            ax.set_aspect("equal")
+            fig.savefig(track_image_path)
+            print(track_image_path)
+
+            # velocity
+            vel = np.zeros([len(point_2d) - 1, 2])
+            for i in range(len(point_2d) - 1):
+                vel[i][0] = (1 / 30) * i
+                vel[i][1] = np.linalg.norm(point_2d[i + 1] - point_2d[i])
+            # hampel filter
+            mad = 1.4826 * np.median(abs(vel.T[1] - np.median(vel.T[1])))
+            vel = vel[abs(vel.T[1] - np.median(vel.T[1])) < 3 * mad]
+            # figure
+            fig, ax = plt.subplots()
+            ax.scatter(vel.T[0], vel.T[1])
+            fig.savefig(vel_image_path)
+            print(vel_image_path)
+
+            # curvature accumulation
+            cur = np.zeros([len(point_2d) - 1, 2])
+            for i in range(len(point_2d) - 1):
+                cur[i][0] = (1 / 30) * i
+                cur[i][1] = np.arctan2((point_2d[i + 1] - point_2d[i])[1], (point_2d[i + 1] - point_2d[i])[0])
+            # average
+            y = np.convolve(cur.T[1], np.ones(30) / 30, mode="same")
+            cur = np.array([cur.T[0], y]).T
+            # curvature delta
+            for i in reversed(range(len(cur) - 1)):
+                cur[i + 1][1] = cur[i + 1][1] - cur[i][1]
+            cur[0][1] = 0
+            # hampel filter
+            mad = 1.4826 * np.median(abs(cur.T[1] - np.median(cur.T[1])))
+            cur = cur[abs(cur.T[1] - np.median(cur.T[1])) < 3 * mad]
+            # figure
+            fig, ax = plt.subplots()
+            ax.scatter(cur.T[0], cur.T[1])
+            fig.savefig(cur_image_path)
+            print(cur_image_path)
 
         except Exception as e:
             print(e)
