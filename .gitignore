@@ -1,18 +1,5 @@
-# local shell scripts
-*.local.sh
+# python
+__pycache__
 
 # cargo
 target
-
-# data
-*.zip
-*.csv
-*.json
-*.db
-*.png
-
-# gis
-*.dbf
-*.prj
-*.shp
-*.shx
